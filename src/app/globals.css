@@ -1,42 +1,72 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* TaskFlow Custom Colors */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Task Priority Colors */
+  --color-priority-low: var(--priority-low);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-high: var(--priority-high);
+
+  /* Category Colors */
+  --color-category-blue: var(--category-blue);
+  --color-category-green: var(--category-green);
+  --color-category-yellow: var(--category-yellow);
+  --color-category-red: var(--category-red);
+  --color-category-purple: var(--category-purple);
+  --color-category-pink: var(--category-pink);
+  --color-category-indigo: var(--category-indigo);
+  --color-category-gray: var(--category-gray);
+  --color-category-orange: var(--category-orange);
+  --color-category-teal: var(--category-teal);
+
+  /* Task Status Colors */
+  --color-status-todo: var(--status-todo);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-completed: var(--status-completed);
+  --color-status-overdue: var(--status-overdue);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -51,7 +81,7 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.488 0.243 264.376);
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
@@ -60,9 +90,10 @@
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --ring: oklch(0.488 0.243 264.376);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -70,12 +101,43 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.984 0.003 247.858);
   --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
   --sidebar-accent: oklch(0.968 0.007 247.896);
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar-ring: oklch(0.488 0.243 264.376);
+
+  /* TaskFlow Custom Colors */
+  --success: oklch(0.6 0.15 142);
+  --success-foreground: oklch(0.984 0.003 247.858);
+  --warning: oklch(0.7 0.2 85);
+  --warning-foreground: oklch(0.984 0.003 247.858);
+  --info: oklch(0.488 0.243 264.376);
+  --info-foreground: oklch(0.984 0.003 247.858);
+
+  /* Task Priority Colors */
+  --priority-low: oklch(0.6 0.15 142);
+  --priority-medium: oklch(0.7 0.2 85);
+  --priority-high: oklch(0.577 0.245 27.325);
+
+  /* Category Colors */
+  --category-blue: oklch(0.488 0.243 264.376);
+  --category-green: oklch(0.6 0.15 142);
+  --category-yellow: oklch(0.7 0.2 85);
+  --category-red: oklch(0.577 0.245 27.325);
+  --category-purple: oklch(0.55 0.25 300);
+  --category-pink: oklch(0.65 0.25 350);
+  --category-indigo: oklch(0.45 0.25 270);
+  --category-gray: oklch(0.554 0.046 257.417);
+  --category-orange: oklch(0.7 0.25 50);
+  --category-teal: oklch(0.6 0.15 180);
+
+  /* Task Status Colors */
+  --status-todo: oklch(0.554 0.046 257.417);
+  --status-in-progress: oklch(0.7 0.2 85);
+  --status-completed: oklch(0.6 0.15 142);
+  --status-overdue: oklch(0.577 0.245 27.325);
 }
 
 .dark {
@@ -85,7 +147,7 @@
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
+  --primary: oklch(0.704 0.04 256.788);
   --primary-foreground: oklch(0.208 0.042 265.755);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
@@ -94,9 +156,10 @@
   --accent: oklch(0.279 0.041 260.031);
   --accent-foreground: oklch(0.984 0.003 247.858);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.279 0.041 260.031);
+  --input: oklch(0.279 0.041 260.031);
+  --ring: oklch(0.704 0.04 256.788);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -108,15 +171,413 @@
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
   --sidebar-accent: oklch(0.279 0.041 260.031);
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-border: oklch(0.279 0.041 260.031);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* TaskFlow Custom Colors - Dark Mode */
+  --success: oklch(0.65 0.15 142);
+  --success-foreground: oklch(0.129 0.042 264.695);
+  --warning: oklch(0.7 0.2 85);
+  --warning-foreground: oklch(0.129 0.042 264.695);
+  --info: oklch(0.704 0.04 256.788);
+  --info-foreground: oklch(0.208 0.042 265.755);
+
+  /* Task Priority Colors - Dark Mode */
+  --priority-low: oklch(0.65 0.15 142);
+  --priority-medium: oklch(0.7 0.2 85);
+  --priority-high: oklch(0.704 0.191 22.216);
+
+  /* Category Colors - Dark Mode */
+  --category-blue: oklch(0.704 0.04 256.788);
+  --category-green: oklch(0.65 0.15 142);
+  --category-yellow: oklch(0.7 0.2 85);
+  --category-red: oklch(0.704 0.191 22.216);
+  --category-purple: oklch(0.6 0.25 300);
+  --category-pink: oklch(0.7 0.25 350);
+  --category-indigo: oklch(0.5 0.25 270);
+  --category-gray: oklch(0.704 0.04 256.788);
+  --category-orange: oklch(0.75 0.25 50);
+  --category-teal: oklch(0.65 0.15 180);
+
+  /* Task Status Colors - Dark Mode */
+  --status-todo: oklch(0.704 0.04 256.788);
+  --status-in-progress: oklch(0.7 0.2 85);
+  --status-completed: oklch(0.65 0.15 142);
+  --status-overdue: oklch(0.704 0.191 22.216);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: hsl(var(--color-muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--color-muted-foreground) / 0.2);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--color-muted-foreground) / 0.3);
+  }
+
+  /* Focus Styles */
+  .focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--color-ring)), 0 0 0 4px hsl(var(--color-background));
+  }
+
+  /* Selection Styles */
+  ::selection {
+    background-color: hsl(var(--color-primary) / 0.2);
+  }
+
+  /* Smooth Transitions */
+  * {
+    transition: color 200ms, background-color 200ms, border-color 200ms;
+  }
+
+  /* Task Priority Indicators */
+  .priority-low {
+    color: hsl(var(--color-priority-low));
+  }
+
+  .priority-medium {
+    color: hsl(var(--color-priority-medium));
+  }
+
+  .priority-high {
+    color: hsl(var(--color-priority-high));
+  }
+
+  .priority-low-bg {
+    background-color: hsl(var(--color-priority-low) / 0.1);
+  }
+
+  .priority-medium-bg {
+    background-color: hsl(var(--color-priority-medium) / 0.1);
+  }
+
+  .priority-high-bg {
+    background-color: hsl(var(--color-priority-high) / 0.1);
+  }
+
+  /* Task Status Indicators */
+  .status-todo {
+    color: hsl(var(--color-muted-foreground));
+  }
+
+  .status-in-progress {
+    color: hsl(var(--color-status-in-progress));
+  }
+
+  .status-completed {
+    color: hsl(var(--color-status-completed));
+  }
+
+  .status-overdue {
+    color: hsl(var(--color-status-overdue));
+  }
+
+  /* Category Color Classes */
+  .category-blue {
+    background-color: hsl(var(--color-category-blue) / 0.1);
+    color: hsl(var(--color-category-blue));
+  }
+
+  .category-green {
+    background-color: hsl(var(--color-category-green) / 0.1);
+    color: hsl(var(--color-category-green));
+  }
+
+  .category-yellow {
+    background-color: hsl(var(--color-category-yellow) / 0.1);
+    color: hsl(var(--color-category-yellow));
+  }
+
+  .category-red {
+    background-color: hsl(var(--color-category-red) / 0.1);
+    color: hsl(var(--color-category-red));
+  }
+
+  .category-purple {
+    background-color: hsl(var(--color-category-purple) / 0.1);
+    color: hsl(var(--color-category-purple));
+  }
+
+  .category-pink {
+    background-color: hsl(var(--color-category-pink) / 0.1);
+    color: hsl(var(--color-category-pink));
+  }
+
+  .category-indigo {
+    background-color: hsl(var(--color-category-indigo) / 0.1);
+    color: hsl(var(--color-category-indigo));
+  }
+
+  .category-gray {
+    background-color: hsl(var(--color-category-gray) / 0.1);
+    color: hsl(var(--color-category-gray));
+  }
+
+  .category-orange {
+    background-color: hsl(var(--color-category-orange) / 0.1);
+    color: hsl(var(--color-category-orange));
+  }
+
+  .category-teal {
+    background-color: hsl(var(--color-category-teal) / 0.1);
+    color: hsl(var(--color-category-teal));
+  }
+
+  /* Animation Classes */
+  .animate-in {
+    animation: fadeIn 200ms ease-out, scaleIn 200ms ease-out;
+  }
+
+  .animate-out {
+    animation: fadeOut 200ms ease-in, scaleOut 200ms ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+    }
+
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes scaleOut {
+    from {
+      transform: scale(1);
+    }
+
+    to {
+      transform: scale(0.95);
+    }
+  }
+
+  /* Task Item Animations */
+  .task-enter {
+    animation: slideInFromTop 300ms ease-out;
+  }
+
+  .task-exit {
+    animation: slideOutToRight 200ms ease-in;
+  }
+
+  @keyframes slideInFromTop {
+    from {
+      transform: translateY(-0.5rem);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOutToRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    to {
+      transform: translateX(0.5rem);
+      opacity: 0;
+    }
+  }
+
+  /* Loading Skeleton */
+  .skeleton {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: hsl(var(--color-muted));
+    border-radius: 0.375rem;
+  }
+
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Glass Effect */
+  .glass {
+    background-color: hsl(var(--color-background) / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--color-border) / 0.5);
+  }
+
+  /* Custom Shadows */
+  .shadow-task {
+    box-shadow: 0 1px 3px 0 hsl(var(--color-foreground) / 0.1), 0 1px 2px -1px hsl(var(--color-foreground) / 0.1);
+    transition: box-shadow 200ms;
+  }
+
+  .shadow-task:hover {
+    box-shadow: 0 4px 6px -1px hsl(var(--color-foreground) / 0.1), 0 2px 4px -2px hsl(var(--color-foreground) / 0.1);
+  }
+
+  .shadow-category {
+    box-shadow: 0 1px 3px 0 hsl(var(--color-foreground) / 0.1), 0 1px 2px -1px hsl(var(--color-foreground) / 0.1);
+    transition: box-shadow 300ms;
+  }
+
+  .shadow-category:hover {
+    box-shadow: 0 10px 15px -3px hsl(var(--color-foreground) / 0.1), 0 4px 6px -4px hsl(var(--color-foreground) / 0.1);
+  }
+
+  /* Interactive States */
+  .interactive {
+    transition: all 200ms;
+  }
+
+  .interactive:hover {
+    transform: scale(1.02);
+  }
+
+  .interactive:active {
+    transform: scale(0.98);
+  }
+
+  .interactive-subtle {
+    transition: all 200ms;
+  }
+
+  .interactive-subtle:hover {
+    background-color: hsl(var(--color-muted) / 0.5);
+  }
+
+  /* Task Completion Styles */
+  .task-completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+  }
+
+  .task-overdue {
+    border-left: 4px solid hsl(var(--color-status-overdue));
+    background-color: hsl(var(--color-status-overdue) / 0.05);
+  }
+
+  .task-due-today {
+    border-left: 4px solid hsl(var(--color-status-in-progress));
+    background-color: hsl(var(--color-status-in-progress) / 0.05);
+  }
+
+  /* Drag and Drop Styles */
+  .drag-handle {
+    cursor: grab;
+    opacity: 0.5;
+    transition: opacity 200ms;
+  }
+
+  .drag-handle:hover {
+    opacity: 1;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .drop-zone {
+    border: 2px dashed hsl(var(--color-muted-foreground) / 0.25);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  .drop-zone-active {
+    border-color: hsl(var(--color-primary));
+    background-color: hsl(var(--color-primary) / 0.05);
+  }
+
+  /* Mobile Optimizations */
+  @media (max-width: 768px) {
+    .mobile-padding {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .mobile-text {
+      font-size: 0.875rem;
+    }
+
+    .mobile-button {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Print Styles */
+  @media print {
+    .no-print {
+      display: none;
+    }
+
+    .print-only {
+      display: block;
+    }
+
+    body {
+      color: black;
+      background-color: white;
+    }
+  }
+
+  /* High Contrast Mode */
+  @media (prefers-contrast: high) {
+    .high-contrast {
+      border: 2px solid hsl(var(--color-foreground));
+    }
+  }
+
+  /* Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none;
+      animation: none;
+    }
   }
 }
