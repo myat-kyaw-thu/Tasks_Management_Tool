@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -232,6 +233,80 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--color-muted-foreground) / 0.3);
+  }
+
+  /* Category Colors */
+  .category-red {
+    @apply bg-red-500;
+  }
+
+  .category-orange {
+    @apply bg-orange-500;
+  }
+
+  .category-yellow {
+    @apply bg-yellow-500;
+  }
+
+  .category-green {
+    @apply bg-green-500;
+  }
+
+  .category-blue {
+    @apply bg-blue-500;
+  }
+
+  .category-purple {
+    @apply bg-purple-500;
+  }
+
+  .category-pink {
+    @apply bg-pink-500;
+  }
+
+  .category-gray {
+    @apply bg-gray-500;
+  }
+
+  /* Category Colors */
+  .category-blue {
+    background-color: hsl(var(--color-category-blue));
+  }
+
+  .category-green {
+    background-color: hsl(var(--color-category-green));
+  }
+
+  .category-yellow {
+    background-color: hsl(var(--color-category-yellow));
+  }
+
+  .category-red {
+    background-color: hsl(var(--color-category-red));
+  }
+
+  .category-purple {
+    background-color: hsl(var(--color-category-purple));
+  }
+
+  .category-pink {
+    background-color: hsl(var(--color-category-pink));
+  }
+
+  .category-indigo {
+    background-color: hsl(var(--color-category-indigo));
+  }
+
+  .category-gray {
+    background-color: hsl(var(--color-category-gray));
+  }
+
+  .category-orange {
+    background-color: hsl(var(--color-category-orange));
+  }
+
+  .category-teal {
+    background-color: hsl(var(--color-category-teal));
   }
 
   /* Focus Styles */
