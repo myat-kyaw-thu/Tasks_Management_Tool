@@ -234,6 +234,7 @@ export type Database = {
     };
   };
 };
+
 export type Tables<
   PublicTableNameOrOptions extends
   | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
@@ -276,7 +277,6 @@ export type TablesInsert<
   : never
   : never;
 
-
 export type TablesUpdate<
   PublicTableNameOrOptions extends keyof Database["public"]["Tables"] | { schema: keyof Database; },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database; }
@@ -306,7 +306,6 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
   ? Database["public"]["Enums"][PublicEnumNameOrOptions]
   : never;
-
 
 // Convenience types for common operations
 export type Task = Tables<"tasks">;
