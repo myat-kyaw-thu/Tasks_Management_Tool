@@ -306,3 +306,36 @@ export type Enums<
   : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
   ? Database["public"]["Enums"][PublicEnumNameOrOptions]
   : never;
+
+
+// Convenience types for common operations
+export type Task = Tables<"tasks">;
+export type TaskInsert = TablesInsert<"tasks">;
+export type TaskUpdate = TablesUpdate<"tasks">;
+
+export type Category = Tables<"categories">;
+export type CategoryInsert = TablesInsert<"categories">;
+export type CategoryUpdate = TablesUpdate<"categories">;
+
+export type Subtask = Tables<"subtasks">;
+export type SubtaskInsert = TablesInsert<"subtasks">;
+export type SubtaskUpdate = TablesUpdate<"subtasks">;
+
+export type TaskActivity = Tables<"task_activities">;
+export type TaskPriority = Enums<"task_priority">;
+export type CategoryColor = Enums<"category_color">;
+
+// Add UserProfile types for supabase
+export type UserProfileTable = {
+  Row: import("./user-profile.types").UserProfile;
+  Insert: import("./user-profile.types").UserProfileInsert;
+  Update: import("./user-profile.types").UserProfileUpdate;
+};
+
+// Add user_profiles to Database type
+// @ts-ignore
+(Database["public"]["Tables"] as any)["user_profiles"] = {} as UserProfileTable;
+
+export type UserProfile = import("./user-profile.types").UserProfile;
+export type UserProfileInsert = import("./user-profile.types").UserProfileInsert;
+export type UserProfileUpdate = import("./user-profile.types").UserProfileUpdate;
