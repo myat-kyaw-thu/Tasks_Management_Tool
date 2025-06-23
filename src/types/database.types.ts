@@ -41,6 +41,45 @@ export type Database = {
           },
         ];
       };
+      email_logs: {
+        Row: {
+          id: string;
+          recipient: string;
+          subject: string;
+          template: string;
+          status: string;
+          external_id: string | null;
+          error_message: string | null;
+          sent_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient: string;
+          subject: string;
+          template: string;
+          status?: string;
+          external_id?: string | null;
+          error_message?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient?: string;
+          subject?: string;
+          template?: string;
+          status?: string;
+          external_id?: string | null;
+          error_message?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       subtasks: {
         Row: {
           id: string;
@@ -73,6 +112,7 @@ export type Database = {
           {
             foreignKeyName: "subtasks_task_id_fkey";
             columns: ["task_id"];
+            isOneToOne: false;
             referencedRelation: "tasks";
             referencedColumns: ["id"];
           },
@@ -187,9 +227,36 @@ export type Database = {
         ];
       };
       user_profiles: {
-        Row: import("./user-profile.types").UserProfile;
-        Insert: import("./user-profile.types").UserProfileInsert;
-        Update: import("./user-profile.types").UserProfileUpdate;
+        Row: {
+          id: string;
+          user_id: string;
+          username: string | null;
+          email_notifications: boolean;
+          daily_digest: boolean;
+          reminder_hours: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          username?: string | null;
+          email_notifications?: boolean;
+          daily_digest?: boolean;
+          reminder_hours?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          username?: string | null;
+          email_notifications?: boolean;
+          daily_digest?: boolean;
+          reminder_hours?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
             foreignKeyName: "user_profiles_user_id_fkey";
@@ -197,7 +264,7 @@ export type Database = {
             isOneToOne: true;
             referencedRelation: "users";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
     };
@@ -324,17 +391,10 @@ export type TaskActivity = Tables<"task_activities">;
 export type TaskPriority = Enums<"task_priority">;
 export type CategoryColor = Enums<"category_color">;
 
-// Add UserProfile types for supabase
-export type UserProfileTable = {
-  Row: import("./user-profile.types").UserProfile;
-  Insert: import("./user-profile.types").UserProfileInsert;
-  Update: import("./user-profile.types").UserProfileUpdate;
-};
+export type EmailLog = Tables<"email_logs">;
+export type EmailLogInsert = TablesInsert<"email_logs">;
+export type EmailLogUpdate = TablesUpdate<"email_logs">;
 
-// Add user_profiles to Database type
-// @ts-ignore
-(Database["public"]["Tables"] as any)["user_profiles"] = {} as UserProfileTable;
-
-export type UserProfile = import("./user-profile.types").UserProfile;
-export type UserProfileInsert = import("./user-profile.types").UserProfileInsert;
-export type UserProfileUpdate = import("./user-profile.types").UserProfileUpdate;
+export type UserProfile = Tables<"user_profiles">;
+export type UserProfileInsert = TablesInsert<"user_profiles">;
+export type UserProfileUpdate = TablesUpdate<"user_profiles">;
