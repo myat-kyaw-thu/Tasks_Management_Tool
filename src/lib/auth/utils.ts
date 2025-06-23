@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { createServerClient } from '@supabase/ssr';
 
 // Client-side auth utilities
 export const authClient = {
@@ -80,7 +81,63 @@ export const authClient = {
     return { session, error };
   },
 };
+// Server-side auth utilities
+export const authServer = {
+  async getUser() {
+    const supabase = await createServerClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    return { user, error };
+  },
 
+  async getSession() {
+    const supabase = await createServerClient();
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+    return { session, error };
+  },
+};
+
+// Auth validation utilities
+export const authValidation = {
+  isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+
+  isValidPassword(password: string): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+
+    if (password.length < 8) {
+      errors.push("Password must be at least 8 characters long");
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push("Password must contain at least one uppercase letter");
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push("Password must contain at least one lowercase letter");
+    }
+    if (!/\d/.test(password)) {
+      errors.push("Password must contain at least one number");
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push("Password must contain at least one special character");
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+
+  passwordsMatch(password: string, confirmPassword: string): boolean {
+    return password === confirmPassword;
+  },
+};
 export const authErrors = {
   getErrorMessage(error: any): string {
     if (!error) return "An unexpected error occurred";
