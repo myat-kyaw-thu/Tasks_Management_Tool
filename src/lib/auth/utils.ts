@@ -50,4 +50,15 @@ export const authClient = {
     });
     return { data, error };
   },
+  async resendConfirmation(email: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/callback`,
+      },
+    });
+    return { data, error };
+  },
 };
