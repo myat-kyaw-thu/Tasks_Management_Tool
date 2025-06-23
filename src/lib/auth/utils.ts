@@ -21,4 +21,14 @@ export const authClient = {
     });
     return { data, error };
   },
+  async signInWithMagicLink(email: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/callback`,
+      },
+    });
+    return { data, error };
+  },
 };
