@@ -31,4 +31,9 @@ export const authClient = {
     });
     return { data, error };
   },
+  async signOut() {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  },
 };
