@@ -61,4 +61,22 @@ export const authClient = {
     });
     return { data, error };
   },
+
+  async getUser() {
+    const supabase = createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    return { user, error };
+  },
+
+  async getSession() {
+    const supabase = createClient();
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+    return { session, error };
+  },
 };
