@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { createServerClient } from '@supabase/ssr';
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 // Client-side auth utilities
 export const authClient = {
@@ -14,6 +14,7 @@ export const authClient = {
     });
     return { data, error };
   },
+
   async signIn(email: string, password: string) {
     const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -22,6 +23,7 @@ export const authClient = {
     });
     return { data, error };
   },
+
   async signInWithMagicLink(email: string) {
     const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithOtp({
@@ -32,11 +34,13 @@ export const authClient = {
     });
     return { data, error };
   },
+
   async signOut() {
     const supabase = createClient();
     const { error } = await supabase.auth.signOut();
     return { error };
   },
+
   async resetPassword(email: string) {
     const supabase = createClient();
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -44,6 +48,7 @@ export const authClient = {
     });
     return { data, error };
   },
+
   async updatePassword(password: string) {
     const supabase = createClient();
     const { data, error } = await supabase.auth.updateUser({
@@ -51,6 +56,7 @@ export const authClient = {
     });
     return { data, error };
   },
+
   async resendConfirmation(email: string) {
     const supabase = createClient();
     const { data, error } = await supabase.auth.resend({
@@ -81,6 +87,7 @@ export const authClient = {
     return { session, error };
   },
 };
+
 // Server-side auth utilities
 export const authServer = {
   async getUser() {
@@ -138,6 +145,8 @@ export const authValidation = {
     return password === confirmPassword;
   },
 };
+
+// Auth error handling
 export const authErrors = {
   getErrorMessage(error: any): string {
     if (!error) return "An unexpected error occurred";
