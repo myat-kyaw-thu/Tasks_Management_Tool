@@ -43,4 +43,11 @@ export const authClient = {
     });
     return { data, error };
   },
+  async updatePassword(password: string) {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.updateUser({
+      password,
+    });
+    return { data, error };
+  },
 };
