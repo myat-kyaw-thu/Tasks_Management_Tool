@@ -26,6 +26,86 @@ export interface AuthFormData {
   name?: string;
 }
 
+export function AuthForm({ mode, onSubmit, loading = false, className }: AuthFormProps) {
+  const [formData, setFormData] = useState<AuthFormData>({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    name: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<Partial<AuthFormData>>({});
+
+  useEffect(() => {
+    // Handle extension context invalidation errors
+    const handleExtensionError = (event: ErrorEvent) => {
+      if (event.message?.includes("Extension context invalidated")) {
+        console.warn("Browser extension conflict detected, continuing normally");
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    window.addEventListener("error", handleExtensionError);
+
+    return () => {
+      window.removeEventListener("error", handleExtensionError);
+    };
+  }, []);
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<AuthFormData> = {};
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Password validation (not for reset or magic-link)
+    if (mode !== "reset" && mode !== "magic-link") {
+      if (!formData.password) {
+        newErrors.password = "Password is required";
+      } else if (formData.password.length < 8) {
+        newErrors.password = "Password must be at least 8 characters";
+      }
+
+      // Confirm password validation (only for register)
+      if (mode === "register") {
+        if (!formData.confirmPassword) {
+          newErrors.confirmPassword = "Please confirm your password";
+        } else if (formData.password !== formData.confirmPassword) {
+          newErrors.confirmPassword = "Passwords do not match";
+        }
+
+        // Name validation
+        if (!formData.name?.trim()) {
+          newErrors.name = "Name is required";
+        }
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
+  switch (mode) {
+    case "login":
+      return "Sign in";
+    case "register":
+      return "Create account";
+    case "reset":
+      return "Send reset link";
+    case "magic-link":
+      return "Send magic link";
+    default:
+      return "Submit";
+  }
+};
+
 return (
   <Card className={cn("w-full max-w-md mx-auto", className)}>
     <CardHeader className="space-y-1 text-center">
