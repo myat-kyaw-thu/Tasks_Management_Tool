@@ -189,7 +189,25 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         setLoading(false);
       }
     },
+    resetPassword: async (email: string) => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
 
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        toast.info("Check your email", "We've sent you a password reset link. Check your email to continue.");
+        return { success: true };
+      } catch (error: any) {
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
   }));
 };
 
