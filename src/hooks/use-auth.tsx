@@ -157,6 +157,28 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         setLoading(false);
       }
     },
+    signInWithMagicLink: async (email: string) => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        toast.info("Check your email", "We've sent you a magic link. Click the link in your email to sign in.");
+        return { success: true };
+      } catch (error: any) {
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
   }));
 };
 
