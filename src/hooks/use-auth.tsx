@@ -297,7 +297,15 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         return false;
       }
     },
-
+    getAccessToken: () => {
+      const token = session?.access_token || null;
+      console.log("Access token requested:", {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        expiresAt: session?.expires_at ? new Date(session.expires_at * 1000) : null,
+      });
+      return token;
+    },
   }));
 };
 
