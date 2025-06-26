@@ -1,9 +1,10 @@
 "use client";
 
 
-import { createClient, type Session, type User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
+import { type Session, type User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -34,13 +35,48 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
 
   // Create stable supabase instance
   const supabase = useMemo(() => createClient(), []);
+  const isAuthenticated = useMemo(() => {
+    return !!(user && session && session.access_token);
+  }, [user, session]);
+  useEffect(() => {
+    if (initialized.current) return;
 
-}
+    let mounted = true;
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    const getInitialSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+
+          // Debug log for initial session
+          console.log("Initial session loaded:", {
+            hasSession: !!session,
+            hasUser: !!session?.user,
+            userId: session?.user?.id,
+            expiresAt: session?.expires_at ? new Date(session.expires_at * 1000) : null,
+          });
+        }
+      } catch (error) {
+        console.error("Error getting initial session:", error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+
+  },
+
+  export function useAuth() {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+      throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
   }
-  return context;
-}
