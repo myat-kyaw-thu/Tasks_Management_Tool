@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { type Session, type User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from 'sonner';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -69,14 +70,81 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         }
       }
     };
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
 
+        // Debug log for auth state changes
+        console.log("Auth state changed:", {
+          event,
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id,
+          expiresAt: session?.expires_at ? new Date(session.expires_at * 1000) : null,
+        });
 
-  },
+        if (event === "SIGNED_IN") {
+          router.push("/dashboard");
+          toast.success("Welcome back!", "You have been signed in successfully.");
+        } else if (event === "SIGNED_OUT") {
+          router.push("/auth/login");
+          toast.info("Signed out", "You have been signed out successfully.");
+        } else if (event === "PASSWORD_RECOVERY") {
+          router.push("/auth/reset-password");
+        } else if (event === "TOKEN_REFRESHED") {
+          console.log("Token refreshed successfully");
+        }
+      }
+    });
 
-  export function useAuth() {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-      throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
+    initialized.current = true;
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase.auth, router]);
+  const authAciton = useMemo(() => ({
+    signUp: async (email: string, password: string) => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        if (data.user && !data.session) {
+          toast.info(
+            "Check your email",
+            "We've sent you a confirmation link. Please check your email to complete your registration.",
+          );
+        }
+
+        return { success: true };
+      } catch (error: any) {
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
+  }));
+};
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
+  return context;
+}
