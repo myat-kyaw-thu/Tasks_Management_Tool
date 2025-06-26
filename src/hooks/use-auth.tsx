@@ -1,9 +1,9 @@
 "use client";
 
 
-import type { Session, User } from "@supabase/supabase-js";
-import { createContext, useContext } from "react";
-
+import { createClient, type Session, type User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -25,7 +25,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function AuthProvider({ children }: { children: React.ReactNode; }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const initialized = useRef(false);
 
+  // Create stable supabase instance
+  const supabase = useMemo(() => createClient(), []);
+
+}
 
 export function useAuth() {
   const context = useContext(AuthContext);
