@@ -227,6 +227,29 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         setLoading(false);
       }
     },
+    resendConfirmation: async (email: string) => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.resend({
+          type: "signup",
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        toast.info("Email sent", "We've sent you a new confirmation link. Check your email.");
+        return { success: true };
+      } catch (error: any) {
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
   }));
 };
 
