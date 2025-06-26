@@ -179,6 +179,17 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         setLoading(false);
       }
     },
+    signOut: async () => {
+      try {
+        setLoading(true);
+        await supabase.auth.signOut();
+      } catch (error: any) {
+        toast.error("Error signing out", error.message);
+      } finally {
+        setLoading(false);
+      }
+    },
+
   }));
 };
 
