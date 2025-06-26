@@ -306,6 +306,20 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
       });
       return token;
     },
+    debugAuthState: () => {
+      console.group("🔍 Auth State Debug");
+      console.log("User:", user);
+      console.log("Session:", session);
+      console.log("Loading:", loading);
+      console.log("Is Authenticated:", isAuthenticated);
+      console.log("Access Token:", session?.access_token ? "Present" : "Missing");
+      console.log("Token Expires:", session?.expires_at ? new Date(session.expires_at * 1000) : "N/A");
+      console.log("User ID:", user?.id);
+      console.log("User Email:", user?.email);
+      console.log("User Confirmed:", user?.email_confirmed_at ? "Yes" : "No");
+      console.groupEnd();
+    },
+  }),
   }));
 };
 
