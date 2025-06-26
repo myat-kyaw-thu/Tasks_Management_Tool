@@ -208,6 +208,25 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         setLoading(false);
       }
     },
+    updatePassword: async (password: string) => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.updateUser({
+          password,
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        toast.success("Password updated", "Your password has been updated successfully.");
+        return { success: true };
+      } catch (error: any) {
+        return { success: false, error: error.message };
+      } finally {
+        setLoading(false);
+      }
+    },
   }));
 };
 
