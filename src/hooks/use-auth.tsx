@@ -250,6 +250,28 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         setLoading(false);
       }
     },
+    refreshSession: async () => {
+      try {
+        console.log("Attempting to refresh session...");
+        const { data, error } = await supabase.auth.refreshSession();
+
+        if (error) {
+          console.error("Session refresh failed:", error);
+          return { success: false, error: error.message };
+        }
+
+        console.log("Session refreshed successfully:", {
+          hasSession: !!data.session,
+          hasUser: !!data.user,
+          expiresAt: data.session?.expires_at ? new Date(data.session.expires_at * 1000) : null,
+        });
+
+        return { success: true };
+      } catch (error: any) {
+        console.error("Session refresh error:", error);
+        return { success: false, error: error.message };
+      }
+    },
   }));
 };
 
