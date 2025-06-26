@@ -272,6 +272,32 @@ export function AuthProvider({ children }: { children: React.ReactNode; }) {
         return { success: false, error: error.message };
       }
     },
+    validateSession: async () => {
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (error) {
+          console.error("Session validation failed:", error);
+          return false;
+        }
+
+        const isValid = !!user;
+        console.log("Session validation result:", {
+          isValid,
+          userId: user?.id,
+          email: user?.email,
+        });
+
+        return isValid;
+      } catch (error) {
+        console.error("Session validation error:", error);
+        return false;
+      }
+    },
+
   }));
 };
 
