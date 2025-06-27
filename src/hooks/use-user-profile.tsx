@@ -3,6 +3,7 @@
 import { cacheUtils } from '@/lib/performance/caching';
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile } from "@/types/database.types";
+import { UserStatus } from '@/types/user-profile.types';
 import { toast } from 'sonner';
 
 
@@ -82,4 +83,13 @@ class UserProfileManager {
   private isValidProfile(data: any): boolean {
     return typeof data === "object" && data !== null && "id" in data && "user_id" in data && "username" in data;
   }
+
+  private normalizeProfile(data: any): UserProfile {
+    return {
+      ...data,
+      status: (data.status ?? "living") as UserStatus,
+      social_links: data.social_links ?? {},
+    };
+  }
+
 }
