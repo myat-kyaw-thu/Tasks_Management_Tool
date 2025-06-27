@@ -78,4 +78,8 @@ class UserProfileManager {
     this.loading = false;
     this.notify();
   }
+
+  private isValidProfile(data: any): boolean {
+    return typeof data === "object" && data !== null && "id" in data && "user_id" in data && "username" in data;
+  }
 }
