@@ -1,6 +1,6 @@
 # 📋 TaskFlow - Modern To-Do Application
 
-![TaskFlow App Screenshot](/placeholder.svg?height=600&width=1200)
+![TaskFlow App Screenshot](public/image.png)
 
 ## 🎯 Overview
 
