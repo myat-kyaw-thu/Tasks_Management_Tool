@@ -207,5 +207,31 @@ class UserProfileManager {
       throw error;
     }
   }
+  async checkUsernameAvailability(username: string) {
+    if (!this.userId) return { available: false, error: "User not authenticated" };
 
+    try {
+      const { data, error } = await this.supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("username", username)
+        .neq("user_id", this.userId)
+        .single();
+
+      if (error && error.code === "PGRST116") {
+        return { available: true, error: null };
+      }
+
+      if (error) {
+        return { available: false, error: error.message };
+      }
+
+      return { available: false, error: null };
+    } catch (err) {
+      return {
+        available: false,
+        error: err instanceof Error ? err.message : "Failed to check username",
+      };
+    }
+  }
 }
