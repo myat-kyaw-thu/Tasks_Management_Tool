@@ -234,4 +234,24 @@ class UserProfileManager {
       };
     }
   }
+  // Getters
+  getProfile(): UserProfile | null {
+    return this.profile;
+  }
+
+  getLoading(): boolean {
+    return this.loading;
+  }
+
+  getError(): string | null {
+    return this.error;
+  }
+
+  cleanup() {
+    if (this.realtimeSubscription) {
+      this.realtimeSubscription.unsubscribe();
+      this.realtimeSubscription = null;
+    }
+    this.subscribers.clear();
+  }
 }
