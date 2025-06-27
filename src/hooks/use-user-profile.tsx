@@ -2,7 +2,7 @@
 
 import { cacheUtils } from '@/lib/performance/caching';
 import { createClient } from "@/lib/supabase/client";
-import type { UserProfile } from "@/types/database.types";
+import type { UserProfile, UserProfileUpdate } from "@/types/database.types";
 import { UserStatus } from '@/types/user-profile.types';
 import { toast } from 'sonner';
 
@@ -131,5 +131,51 @@ class UserProfileManager {
       social_links: data.social_links ?? {},
     };
   }
+  async updateProfile(updates: UserProfileUpdate) {
+    if (!this.userId || !this.profile) {
+      throw new Error("User not authenticated or profile not loaded");
+    }
 
+    // Optimistic update
+    const originalProfile = { ...this.profile };
+    this.profile = {
+      ...this.profile,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    this.notify();
+
+    try {
+      const { data, error } = await this.supabase
+        .from("user_profiles")
+        .update(updates)
+        .eq("user_id", this.userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      this.profile = this.normalizeProfile(data);
+      cacheUtils.setCachedProfile(this.userId, this.profile);
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
+      });
+
+      return { success: true, data: this.profile };
+    } catch (error) {
+      // Rollback optimistic update
+      this.profile = originalProfile;
+      this.notify();
+
+      const errorMessage = error instanceof Error ? error.message : "Failed to update profile";
+      toast({
+        title: "Failed to update profile",
+        description: errorMessage,
+      });
+
+      throw error;
+    }
+  }
 }
