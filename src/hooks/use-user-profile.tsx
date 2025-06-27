@@ -178,4 +178,34 @@ class UserProfileManager {
       throw error;
     }
   }
+  async uploadAvatar(file: File) {
+    if (!this.userId) throw new Error("User not authenticated");
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${this.userId}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await this.supabase.storage.from("avatars").upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = this.supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      await this.updateProfile({ avatar_url: publicUrl });
+
+      return { success: true, url: publicUrl };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload avatar";
+      toast({
+        title: "Failed to upload avatar",
+        description: errorMessage,
+      });
+
+      throw error;
+    }
+  }
+
 }
