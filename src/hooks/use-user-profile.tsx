@@ -1,13 +1,12 @@
 "use client";
 
-import { cacheUtils } from '@/lib/performance/caching';
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "@/hooks/use-toast";
+import { cacheUtils } from "@/lib/performance/caching";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, UserProfileUpdate } from "@/types/database.types";
-import { UserStatus } from '@/types/user-profile.types';
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { toast } from 'sonner';
-import { useAuth } from './use-auth';
-
+import type { UserStatus } from "@/types/user-profile.types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 class UserProfileManager {
   private static instance: UserProfileManager;
@@ -34,48 +33,15 @@ class UserProfileManager {
   private notify() {
     this.subscribers.forEach((callback) => callback());
   }
-  private setupRealtimeSubscription() {
-    if (!this.userId || this.realtimeSubscription) return;
 
-    this.realtimeSubscription = this.supabase
-      .channel(`user_profiles:${this.userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "user_profiles",
-          filter: `user_id=eq.${this.userId}`,
-        },
-        (payload) => this.handleRealtimeUpdate(payload),
-      )
-      .subscribe();
+  async initialize(userId: string) {
+    if (this.userId === userId && this.profile) return;
+
+    this.userId = userId;
+    await this.fetchProfile();
+    this.setupRealtimeSubscription();
   }
-  private handleRealtimeUpdate(payload: any) {
-    const { eventType, new: newRecord } = payload;
 
-    switch (eventType) {
-      case "INSERT":
-      case "UPDATE":
-        this.profile = this.normalizeProfile(newRecord);
-        this.error = null; // Clear any "not found" errors
-        break;
-      case "DELETE":
-        this.profile = null;
-        break;
-    }
-
-    // Update cache
-    if (this.userId) {
-      if (this.profile) {
-        cacheUtils.setCachedProfile(this.userId, this.profile);
-      } else {
-        cacheUtils.invalidateUserCache(this.userId);
-      }
-    }
-
-    this.notify();
-  }
   private async fetchProfile() {
     if (!this.userId) return;
 
@@ -133,6 +99,51 @@ class UserProfileManager {
       social_links: data.social_links ?? {},
     };
   }
+
+  private setupRealtimeSubscription() {
+    if (!this.userId || this.realtimeSubscription) return;
+
+    this.realtimeSubscription = this.supabase
+      .channel(`user_profiles:${this.userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_profiles",
+          filter: `user_id=eq.${this.userId}`,
+        },
+        (payload) => this.handleRealtimeUpdate(payload),
+      )
+      .subscribe();
+  }
+
+  private handleRealtimeUpdate(payload: any) {
+    const { eventType, new: newRecord } = payload;
+
+    switch (eventType) {
+      case "INSERT":
+      case "UPDATE":
+        this.profile = this.normalizeProfile(newRecord);
+        this.error = null; // Clear any "not found" errors
+        break;
+      case "DELETE":
+        this.profile = null;
+        break;
+    }
+
+    // Update cache
+    if (this.userId) {
+      if (this.profile) {
+        cacheUtils.setCachedProfile(this.userId, this.profile);
+      } else {
+        cacheUtils.invalidateUserCache(this.userId);
+      }
+    }
+
+    this.notify();
+  }
+
   async updateProfile(updates: UserProfileUpdate) {
     if (!this.userId || !this.profile) {
       throw new Error("User not authenticated or profile not loaded");
@@ -180,6 +191,7 @@ class UserProfileManager {
       throw error;
     }
   }
+
   async uploadAvatar(file: File) {
     if (!this.userId) throw new Error("User not authenticated");
 
@@ -209,6 +221,7 @@ class UserProfileManager {
       throw error;
     }
   }
+
   async checkUsernameAvailability(username: string) {
     if (!this.userId) return { available: false, error: "User not authenticated" };
 
@@ -236,6 +249,7 @@ class UserProfileManager {
       };
     }
   }
+
   // Getters
   getProfile(): UserProfile | null {
     return this.profile;
@@ -256,7 +270,9 @@ class UserProfileManager {
     }
     this.subscribers.clear();
   }
-  export function useUserProfile() {
+}
+
+export function useUserProfile() {
   const { user } = useAuth();
   const manager = UserProfileManager.getInstance();
   const [, forceUpdate] = useState({});
@@ -337,6 +353,4 @@ class UserProfileManager {
       refetch,
     ],
   );
-}
-  
 }
