@@ -20,4 +20,13 @@ class UserProfileManager {
     }
     return UserProfileManager.instance;
   }
+
+  subscribe(callback: () => void) {
+    this.subscribers.add(callback);
+    return () => this.subscribers.delete(callback);
+  }
+
+  private notify() {
+    this.subscribers.forEach((callback) => callback());
+  }
 }
