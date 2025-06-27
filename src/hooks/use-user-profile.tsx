@@ -13,4 +13,11 @@ class UserProfileManager {
   private realtimeSubscription: any = null;
   private supabase = createClient();
   private userId: string | null = null;
+
+  static getInstance(): UserProfileManager {
+    if (!UserProfileManager.instance) {
+      UserProfileManager.instance = new UserProfileManager();
+    }
+    return UserProfileManager.instance;
+  }
 }
