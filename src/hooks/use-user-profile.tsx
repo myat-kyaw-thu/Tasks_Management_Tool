@@ -4,7 +4,9 @@ import { cacheUtils } from '@/lib/performance/caching';
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, UserProfileUpdate } from "@/types/database.types";
 import { UserStatus } from '@/types/user-profile.types';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { useAuth } from './use-auth';
 
 
 class UserProfileManager {
@@ -254,4 +256,87 @@ class UserProfileManager {
     }
     this.subscribers.clear();
   }
+  export function useUserProfile() {
+  const { user } = useAuth();
+  const manager = UserProfileManager.getInstance();
+  const [, forceUpdate] = useState({});
+  const userIdRef = useRef<string | null>(null);
+
+  const rerender = useCallback(() => forceUpdate({}), []);
+
+  useEffect(() => {
+    const unsubscribe = manager.subscribe(rerender);
+    return () => {
+      unsubscribe();
+    };
+  }, [rerender]);
+
+  useEffect(() => {
+    const initializeManager = async () => {
+      if (user && user.id !== userIdRef.current) {
+        userIdRef.current = user.id;
+        await manager.initialize(user.id);
+      } else if (!user) {
+        userIdRef.current = null;
+      }
+    };
+
+    initializeManager();
+  }, [user, manager]);
+
+  const updateProfile = useCallback(
+    async (updates: UserProfileUpdate) => {
+      try {
+        return await manager.updateProfile(updates);
+      } catch (error) {
+        return { success: false, error };
+      }
+    },
+    [manager],
+  );
+
+  const uploadAvatar = useCallback(
+    async (file: File) => {
+      try {
+        return await manager.uploadAvatar(file);
+      } catch (error) {
+        return { success: false, error };
+      }
+    },
+    [manager],
+  );
+
+  const checkUsernameAvailability = useCallback(
+    async (username: string) => manager.checkUsernameAvailability(username),
+    [manager],
+  );
+
+  const refetch = useCallback(async () => {
+    if (user) {
+      await manager.initialize(user.id);
+    }
+  }, [manager, user]);
+
+  return useMemo(
+    () => ({
+      profile: manager.getProfile(),
+      loading: manager.getLoading(),
+      error: manager.getError(),
+      updateProfile,
+      uploadAvatar,
+      checkUsernameAvailability,
+      refetch,
+    }),
+    [
+      manager.getProfile(),
+      manager.getLoading(),
+      manager.getError(),
+      updateProfile,
+      uploadAvatar,
+      checkUsernameAvailability,
+      refetch,
+    ],
+  );
+}
+  
 }
