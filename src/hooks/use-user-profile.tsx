@@ -32,7 +32,23 @@ class UserProfileManager {
   private notify() {
     this.subscribers.forEach((callback) => callback());
   }
+  private setupRealtimeSubscription() {
+    if (!this.userId || this.realtimeSubscription) return;
 
+    this.realtimeSubscription = this.supabase
+      .channel(`user_profiles:${this.userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_profiles",
+          filter: `user_id=eq.${this.userId}`,
+        },
+        (payload) => this.handleRealtimeUpdate(payload),
+      )
+      .subscribe();
+  }
   private handleRealtimeUpdate(payload: any) {
     const { eventType, new: newRecord } = payload;
 
