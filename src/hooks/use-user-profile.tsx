@@ -33,7 +33,31 @@ class UserProfileManager {
     this.subscribers.forEach((callback) => callback());
   }
 
+  private handleRealtimeUpdate(payload: any) {
+    const { eventType, new: newRecord } = payload;
 
+    switch (eventType) {
+      case "INSERT":
+      case "UPDATE":
+        this.profile = this.normalizeProfile(newRecord);
+        this.error = null; // Clear any "not found" errors
+        break;
+      case "DELETE":
+        this.profile = null;
+        break;
+    }
+
+    // Update cache
+    if (this.userId) {
+      if (this.profile) {
+        cacheUtils.setCachedProfile(this.userId, this.profile);
+      } else {
+        cacheUtils.invalidateUserCache(this.userId);
+      }
+    }
+
+    this.notify();
+  }
   private async fetchProfile() {
     if (!this.userId) return;
 
