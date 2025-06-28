@@ -1,23 +1,218 @@
 "use client";
 
-import { CategoryForm } from "@/components/categories/category-form";
-import { CategoryList } from "@/components/categories/category-list";
-import { AppHeader } from "@/components/layout/app-header";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { UserProfileCard } from "@/components/profile/user-profile-card";
-import { TaskFiltersComponent, type TaskFilters } from "@/components/tasks/task-filters";
-import { TaskList } from "@/components/tasks/task-list";
-import { TaskForm } from '@/components/tasks/tasks-form.';
+import { BarChart3, Calendar, CheckCircle, Clock, Plus, TrendingUp } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+
+// UI Components
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Performance optimized imports
+import { createAsyncComponent } from "@/lib/performance/async-component-factory";
+import { bundleOptimization, performanceMonitoring } from "@/lib/performance/bundle-optimization";
+
+// Core components
+import { AppHeader } from "@/components/layout/app-header";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { UserProfileCard } from "@/components/profile/user-profile-card";
+import { TaskList } from "@/components/tasks/task-list";
+
+// Lazy loaded components
+const LazyTaskForm = createAsyncComponent(() =>
+  import("@/components/tasks/tasks-form.").then((m) => ({ default: m.TaskForm })),
+);
+
+const LazyTaskFilters = createAsyncComponent(() =>
+  import("@/components/tasks/task-filters").then((m) => ({ default: m.TaskFiltersComponent })),
+);
+
+const LazyCategoryForm = createAsyncComponent(() =>
+  import("@/components/categories/category-form").then((m) => ({ default: m.CategoryForm })),
+);
+
+const LazyCategoryList = createAsyncComponent(() =>
+  import("@/components/categories/category-list").then((m) => ({ default: m.CategoryList })),
+);
+
+// Hooks and types
+import type { TaskFilters } from "@/components/tasks/task-filters";
 import { useCategories } from "@/hooks/use-categories";
-import { useTasks, useTaskStats } from "@/hooks/use-tasks";
-import type { Category, TaskWithCategory } from "@/lib/supabase/types";
-import { Calendar, CheckCircle, Clock, Plus } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useTasks } from "@/hooks/use-tasks";
+import type { Category, TaskWithCategory } from "@/types/database.types";
+import { Toaster } from "sonner";
+
+// Modern Stats Card with subtle design
+const StatsCard = React.memo(
+  ({
+    title,
+    value,
+    description,
+    icon: Icon,
+    loading,
+    trend,
+  }: {
+    title: string;
+    value: number;
+    description: string;
+    icon: React.ComponentType<{ className?: string; }>;
+    loading: boolean;
+    trend?: { value: number; isPositive: boolean; };
+  }) => {
+    return (
+      <Card className="border-0 bg-muted/30 hover:bg-muted/50 transition-colors duration-200">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+          <div className="p-1.5 rounded-md bg-background/60">
+            <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          <div className="flex items-baseline gap-2">
+            <div className="text-2xl font-semibold">
+              {loading ? <div className="h-7 w-12 bg-muted animate-pulse rounded" /> : value}
+            </div>
+            {trend && !loading && (
+              <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">
+                {trend.isPositive ? "+" : ""}
+                {trend.value}%
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+        </CardContent>
+      </Card>
+    );
+  },
+);
+StatsCard.displayName = "StatsCard";
+
+// Full-width Progress Overview
+const ProgressOverview = React.memo(({ stats, loading }: { stats: any; loading: boolean; }) => {
+  if (loading || !stats || stats.total === 0) {
+    return (
+      <Card className="border-0 bg-muted/30 h-full">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="h-4 w-4" />
+            Progress Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="h-2 bg-muted animate-pulse rounded-full" />
+            <div className="grid grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-1">
+                  <div className="h-6 bg-muted animate-pulse rounded" />
+                  <div className="h-3 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const completionRate = Math.round((stats.completed / stats.total) * 100);
+  const progressSegments = [
+    {
+      label: "Completed",
+      value: stats.completed,
+      color: "bg-emerald-500/80",
+      percentage: (stats.completed / stats.total) * 100,
+    },
+    {
+      label: "Overdue",
+      value: stats.overdue,
+      color: "bg-rose-500/80",
+      percentage: (stats.overdue / stats.total) * 100,
+    },
+    {
+      label: "Due Today",
+      value: stats.today,
+      color: "bg-amber-500/80",
+      percentage: (stats.today / stats.total) * 100,
+    },
+    {
+      label: "Pending",
+      value: stats.pending - stats.today - stats.overdue,
+      color: "bg-blue-500/80",
+      percentage: ((stats.pending - stats.today - stats.overdue) / stats.total) * 100,
+    },
+  ];
+
+  return (
+    <Card className="border-0 bg-muted/30">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <BarChart3 className="h-4 w-4" />
+          Progress Overview
+        </CardTitle>
+        <CardDescription className="text-xs">Track your productivity and task completion</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Full-width Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-medium text-muted-foreground">Overall Completion</span>
+            <span className="text-lg font-semibold text-emerald-600">{completionRate}%</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden flex w-full">
+            {progressSegments.map(
+              (segment, index) =>
+                segment.percentage > 0 && (
+                  <div
+                    key={index}
+                    className={`${segment.color} transition-all duration-300`}
+                    style={{ width: `${segment.percentage}%` }}
+                    title={`${segment.label}: ${segment.value}`}
+                  />
+                ),
+            )}
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-2">
+          <div className="text-center p-2 rounded-md bg-emerald-50/50 dark:bg-emerald-950/20">
+            <div className="text-lg font-semibold text-emerald-600">{stats.completed}</div>
+            <div className="text-[10px] text-emerald-700/70 font-medium">Completed</div>
+          </div>
+          <div className="text-center p-2 rounded-md bg-blue-50/50 dark:bg-blue-950/20">
+            <div className="text-lg font-semibold text-blue-600">{stats.pending}</div>
+            <div className="text-[10px] text-blue-700/70 font-medium">Pending</div>
+          </div>
+          <div className="text-center p-2 rounded-md bg-amber-50/50 dark:bg-amber-950/20">
+            <div className="text-lg font-semibold text-amber-600">{stats.today}</div>
+            <div className="text-[10px] text-amber-700/70 font-medium">Due Today</div>
+          </div>
+          <div className="text-center p-2 rounded-md bg-rose-50/50 dark:bg-rose-950/20">
+            <div className="text-lg font-semibold text-rose-600">{stats.overdue}</div>
+            <div className="text-[10px] text-rose-700/70 font-medium">Overdue</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+ProgressOverview.displayName = "ProgressOverview";
 
 export default function DashboardPage() {
+  // Performance monitoring
+  useEffect(() => {
+    performanceMonitoring.trackWebVitals();
+    bundleOptimization.preloadCriticalResources();
+    if (process.env.NODE_ENV === "development") {
+      const interval = setInterval(() => performanceMonitoring.checkMemoryUsage(), 30000);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  // State management
   const [activeView, setActiveView] = useState("dashboard");
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskWithCategory | null>(null);
@@ -25,58 +220,101 @@ export default function DashboardPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [taskFiltersState, setTaskFiltersState] = useState<TaskFilters>({});
 
-  // Get all tasks for stats calculation
-  const { tasks: allTasks } = useTasks({ autoFetch: true });
-  const { stats, loading: statsLoading } = useTaskStats(allTasks);
-
-  // Get filtered tasks based on active view
-  const getTaskFilters = useCallback(() => {
-    const today = new Date().toISOString().split("T")[0];
-
-    switch (activeView) {
-      case "today":
-        return { due_date: today };
-      case "upcoming":
-        return { completed: false };
-      case "important":
-        return { priority: "high", completed: false };
-      case "completed":
-        return { completed: true };
-      case "archive":
-        return { deleted_at: { not: null } };
-      default:
-        return { completed: false };
-    }
-  }, [activeView]);
-
-  const filteredTasks = useTasks({
-    filters: taskFiltersState,
-    autoFetch: true,
-  });
+  // Data hooks
+  const {
+    tasks: allTasks,
+    loading: allTasksLoading,
+    error: tasksError,
+    createTask,
+    updateTask,
+    deleteTask,
+    toggleTask,
+    refetch: refetchTasks,
+  } = useTasks({ autoFetch: true, enableRealtime: true });
 
   const { categories, createCategory, updateCategory, deleteCategory } = useCategories();
 
-  // For dashboard view, show recent incomplete tasks
-  const displayTasks = useMemo(() => {
-    if (activeView === "dashboard") {
-      return allTasks.filter((task) => !task.is_completed).slice(0, 5);
-    }
-    if (activeView === "upcoming") {
-      const today = new Date().toISOString().split("T")[0];
-      return filteredTasks.tasks.filter((task) => task.due_date && task.due_date > today);
-    }
-    return filteredTasks.tasks;
-  }, [activeView, allTasks, filteredTasks.tasks]);
+  // Transform tasks with categories
+  const tasksWithCategories = useMemo((): TaskWithCategory[] => {
+    return allTasks.map((task) => ({
+      ...task,
+      category: categories.find((cat) => cat.id === task.category_id) || null,
+    }));
+  }, [allTasks, categories]);
 
+  // Calculate comprehensive stats
+  const { stats, loading: statsLoading } = useMemo(() => {
+    if (allTasksLoading || !tasksWithCategories.length) {
+      return {
+        stats: { total: 0, completed: 0, pending: 0, today: 0, overdue: 0, thisWeek: 0, highPriority: 0 },
+        loading: allTasksLoading,
+      };
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    const stats = {
+      total: tasksWithCategories.length,
+      completed: tasksWithCategories.filter((t) => t.is_completed).length,
+      pending: tasksWithCategories.filter((t) => !t.is_completed).length,
+      today: tasksWithCategories.filter((t) => t.due_date === today && !t.is_completed).length,
+      overdue: tasksWithCategories.filter((t) => t.due_date && t.due_date < today && !t.is_completed).length,
+      thisWeek: tasksWithCategories.filter(
+        (t) => t.due_date && t.due_date <= weekFromNow && t.due_date >= today && !t.is_completed,
+      ).length,
+      highPriority: tasksWithCategories.filter((t) => t.priority === "high" && !t.is_completed).length,
+    };
+
+    return { stats, loading: false };
+  }, [tasksWithCategories, allTasksLoading]);
+
+  // Task filtering logic
+  const getTaskFilters = useCallback(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const filterMap = {
+      today: (task: TaskWithCategory) => task.due_date === today,
+      upcoming: (task: TaskWithCategory) => !task.is_completed && task.due_date && task.due_date > today,
+      important: (task: TaskWithCategory) => task.priority === "high" && !task.is_completed,
+      completed: (task: TaskWithCategory) => task.is_completed,
+      archive: (task: TaskWithCategory) => task.deleted_at !== null,
+      default: (task: TaskWithCategory) => !task.is_completed,
+    };
+    return filterMap[activeView as keyof typeof filterMap] || filterMap.default;
+  }, [activeView]);
+
+  const applyAdditionalFilters = useCallback(
+    (task: TaskWithCategory) => {
+      const { search, category, priority, due_date } = taskFiltersState;
+      if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (category && task.category_id !== category) return false;
+      if (priority && task.priority !== priority) return false;
+      if (due_date && task.due_date !== due_date) return false;
+      return true;
+    },
+    [taskFiltersState],
+  );
+
+  const displayTasks = useMemo(() => {
+    const viewFilter = getTaskFilters();
+    const viewFilteredTasks = tasksWithCategories.filter(viewFilter);
+    const fullyFilteredTasks = viewFilteredTasks.filter(applyAdditionalFilters);
+    return activeView === "dashboard" ? fullyFilteredTasks.slice(0, 5) : fullyFilteredTasks;
+  }, [activeView, tasksWithCategories, getTaskFilters, applyAdditionalFilters]);
+
+  // Event handlers
   const handleCreateTask = useCallback(
     async (taskData: any) => {
-      const result = await filteredTasks.createTask(taskData);
-      if (result.success) {
+      performanceMonitoring.trackInteraction("create", "task");
+      try {
+        await createTask(taskData);
         setShowTaskForm(false);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Failed to create task" };
       }
-      return result;
     },
-    [filteredTasks],
+    [createTask],
   );
 
   const handleEditTask = useCallback((task: TaskWithCategory) => {
@@ -87,53 +325,74 @@ export default function DashboardPage() {
   const handleUpdateTask = useCallback(
     async (updates: any) => {
       if (!editingTask) return { success: false };
-
-      const result = await filteredTasks.updateTask(editingTask.id, updates);
-      if (result.success) {
+      try {
+        await updateTask(editingTask.id, updates);
         setShowTaskForm(false);
         setEditingTask(null);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Failed to update task" };
       }
-      return result;
     },
-    [editingTask, filteredTasks],
+    [editingTask, updateTask],
   );
-
-  const handleCancelForm = useCallback(() => {
-    setShowTaskForm(false);
-    setEditingTask(null);
-  }, []);
 
   const handleToggleComplete = useCallback(
     async (taskId: string) => {
-      return await filteredTasks.toggleTaskCompletion(taskId);
+      try {
+        await toggleTask(taskId);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Failed to toggle task" };
+      }
     },
-    [filteredTasks],
+    [toggleTask],
   );
 
   const handleDeleteTask = useCallback(
-    async (taskId: string, permanent: boolean) => {
-      return await filteredTasks.deleteTask(taskId, permanent);
+    async (taskId: string) => {
+      try {
+        await deleteTask(taskId);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Failed to delete task" };
+      }
     },
-    [filteredTasks],
+    [deleteTask],
   );
 
   const handleDuplicateTask = useCallback(
     async (taskId: string) => {
-      return await filteredTasks.duplicateTask(taskId);
-    },
-    [filteredTasks],
-  );
+      try {
+        const originalTask = tasksWithCategories.find((t) => t.id === taskId);
+        if (!originalTask) throw new Error("Task not found");
 
-  const handleNewTask = useCallback(() => {
-    setShowTaskForm(true);
-  }, []);
+        const duplicateData = {
+          title: `${originalTask.title} (Copy)`,
+          description: originalTask.description,
+          priority: originalTask.priority,
+          due_date: originalTask.due_date,
+          category_id: originalTask.category_id,
+          user_id: originalTask.user_id,
+          is_completed: false,
+          completed_at: null,
+          sort_order: originalTask.sort_order ?? 0,
+          deleted_at: null,
+        };
+
+        await createTask(duplicateData);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Failed to duplicate task" };
+      }
+    },
+    [tasksWithCategories, createTask],
+  );
 
   const handleCreateCategory = useCallback(
     async (categoryData: any) => {
       const result = await createCategory(categoryData);
-      if (result.success) {
-        setShowCategoryForm(false);
-      }
+      if (result.success) setShowCategoryForm(false);
       return result;
     },
     [createCategory],
@@ -157,59 +416,22 @@ export default function DashboardPage() {
     [editingCategory, updateCategory],
   );
 
-  const handleCancelCategoryForm = useCallback(() => {
-    setShowCategoryForm(false);
-    setEditingCategory(null);
-  }, []);
+  // View metadata
+  const viewMetadata = useMemo(() => {
+    const metadata = {
+      dashboard: { title: "Dashboard", description: "Welcome back! Here's your productivity overview." },
+      today: { title: "Today's Tasks", description: "Focus on what's due today" },
+      upcoming: { title: "Upcoming Tasks", description: "Plan ahead with future tasks" },
+      important: { title: "Important Tasks", description: "High priority items that need attention" },
+      completed: { title: "Completed Tasks", description: "Review your accomplishments" },
+      archive: { title: "Archived Tasks", description: "Previously deleted or archived items" },
+      profile: { title: "Profile", description: "Manage your account and preferences" },
+      categories: { title: "Categories", description: "Organize tasks with custom categories" },
+    };
+    return metadata[activeView as keyof typeof metadata] || metadata.dashboard;
+  }, [activeView]);
 
-  const getViewTitle = () => {
-    switch (activeView) {
-      case "dashboard":
-        return "Dashboard";
-      case "today":
-        return "Today's Tasks";
-      case "upcoming":
-        return "Upcoming Tasks";
-      case "important":
-        return "Important Tasks";
-      case "completed":
-        return "Completed Tasks";
-      case "archive":
-        return "Archived Tasks";
-      case "profile":
-        return "Profile";
-      case "settings":
-        return "Settings";
-      case "categories":
-        return "Categories";
-      case "analytics":
-        return "Analytics";
-      default:
-        return "Dashboard";
-    }
-  };
-
-  const getViewDescription = () => {
-    switch (activeView) {
-      case "dashboard":
-        return "Welcome back! Here's an overview of your tasks.";
-      case "today":
-        return "Tasks due today";
-      case "upcoming":
-        return "Tasks scheduled for the future";
-      case "important":
-        return "High priority tasks that need attention";
-      case "completed":
-        return "Tasks you've completed";
-      case "archive":
-        return "Archived and deleted tasks";
-      case "profile":
-        return "Manage your profile information";
-      default:
-        return "";
-    }
-  };
-
+  // Task form overlay with proper sidebar layout
   if (showTaskForm) {
     return (
       <SidebarProvider>
@@ -218,12 +440,15 @@ export default function DashboardPage() {
           <SidebarInset className="flex-1">
             <AppHeader />
             <main className="flex-1 overflow-auto">
-              <div className="p-6">
+              <div className="p-4">
                 <div className="max-w-2xl mx-auto">
-                  <TaskForm
-                    task={editingTask}
+                  <LazyTaskForm
+                    task={editingTask || null}
                     onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
-                    onCancel={handleCancelForm}
+                    onCancel={() => {
+                      setShowTaskForm(false);
+                      setEditingTask(null);
+                    }}
                   />
                 </div>
               </div>
@@ -241,17 +466,18 @@ export default function DashboardPage() {
         <SidebarInset className="flex-1">
           <AppHeader />
           <main className="flex-1 overflow-auto">
-            <div className="p-6 space-y-6">
+            <div className="p-4 space-y-4">
+              {/* Compact Header Section */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight">{getViewTitle()}</h1>
-                  <p className="text-muted-foreground">{getViewDescription()}</p>
+                  <h1 className="text-2xl font-semibold tracking-tight">{viewMetadata.title}</h1>
+                  <p className="text-sm text-muted-foreground">{viewMetadata.description}</p>
                 </div>
                 {(activeView === "dashboard" ||
                   activeView === "today" ||
                   activeView === "upcoming" ||
                   activeView === "important") && (
-                    <Button onClick={handleNewTask}>
+                    <Button onClick={() => setShowTaskForm(true)} size="sm">
                       <Plus className="mr-2 h-4 w-4" />
                       New Task
                     </Button>
@@ -261,123 +487,111 @@ export default function DashboardPage() {
               {/* Dashboard View */}
               {activeView === "dashboard" && (
                 <>
-                  {/* Stats Grid */}
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{statsLoading ? "..." : stats?.total || 0}</div>
-                        <p className="text-xs text-muted-foreground">All your tasks</p>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-success" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{statsLoading ? "..." : stats?.completed || 0}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {stats?.total ? Math.round(((stats?.completed || 0) / stats.total) * 100) : 0}% completion
-                          rate
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                        <Clock className="h-4 w-4 text-warning" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{statsLoading ? "..." : stats?.pending || 0}</div>
-                        <p className="text-xs text-muted-foreground">Tasks to complete</p>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Due Today</CardTitle>
-                        <Calendar className="h-4 w-4 text-info" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{statsLoading ? "..." : stats?.today || 0}</div>
-                        <p className="text-xs text-muted-foreground">Focus for today</p>
-                      </CardContent>
-                    </Card>
+                  {/* Compact Stats Grid */}
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    <StatsCard
+                      title="Total Tasks"
+                      value={stats?.total || 0}
+                      description="All your tasks across categories"
+                      icon={CheckCircle}
+                      loading={statsLoading}
+                    />
+                    <StatsCard
+                      title="Completed"
+                      value={stats?.completed || 0}
+                      description={`${stats?.total ? Math.round(((stats?.completed || 0) / stats.total) * 100) : 0}% completion rate`}
+                      icon={CheckCircle}
+                      loading={statsLoading}
+                    />
+                    <StatsCard
+                      title="Due Today"
+                      value={stats?.today || 0}
+                      description="Tasks requiring immediate attention"
+                      icon={Calendar}
+                      loading={statsLoading}
+                    />
+                    <StatsCard
+                      title="Overdue"
+                      value={stats?.overdue || 0}
+                      description="Tasks that need urgent action"
+                      icon={Clock}
+                      loading={statsLoading}
+                    />
                   </div>
 
-                  {/* Main Content Grid */}
-                  <div className="grid gap-6 lg:grid-cols-3">
-                    {/* User Profile Card */}
-                    <div className="lg:col-span-1">
-                      <UserProfileCard />
+                  {/* Profile and Progress Grid - 3:9 ratio */}
+                  <div className="grid gap-4 grid-cols-12">
+                    {/* User Profile Card - 3 columns */}
+                    <div className="col-span-12 lg:col-span-3">
+                      <div className="overflow-hidden">
+                        <UserProfileCard />
+                      </div>
                     </div>
 
-                    {/* Recent Tasks */}
-                    <div className="lg:col-span-2">
-                      <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                          <div>
-                            <CardTitle>Recent Tasks</CardTitle>
-                            <CardDescription>Your latest incomplete tasks</CardDescription>
-                          </div>
-                          <Button variant="outline" size="sm" onClick={handleNewTask}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Task
-                          </Button>
-                        </CardHeader>
-                        <CardContent>
-                          <TaskList
-                            tasks={displayTasks}
-                            loading={filteredTasks.loading}
-                            error={filteredTasks.error}
-                            onToggleComplete={handleToggleComplete}
-                            onEdit={handleEditTask}
-                            onDelete={handleDeleteTask}
-                            onDuplicate={handleDuplicateTask}
-                            onRetry={filteredTasks.refetch}
-                            emptyState={{
-                              title: "No tasks yet",
-                              description: "Create your first task to get started with TaskFlow.",
-                              action: {
-                                label: "Create Task",
-                                onClick: handleNewTask,
-                              },
-                            }}
-                          />
-                        </CardContent>
-                      </Card>
+                    {/* Progress Overview - 9 columns */}
+                    <div className="col-span-12 lg:col-span-9 h-full">
+                      <ProgressOverview stats={stats} loading={statsLoading} />
                     </div>
+                  </div>
+
+                  {/* Recent Tasks - Full Width */}
+                  <div className="w-full">
+                    <Card className="border-0 bg-muted/30">
+                      <CardHeader className="flex flex-row items-center justify-between pb-3">
+                        <div>
+                          <CardTitle className="text-base">Recent Tasks</CardTitle>
+                          <CardDescription className="text-xs">Your latest incomplete tasks</CardDescription>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setShowTaskForm(true)}>
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Task
+                        </Button>
+                      </CardHeader>
+                      <CardContent>
+                        <TaskList
+                          tasks={displayTasks}
+                          loading={allTasksLoading}
+                          onToggleComplete={handleToggleComplete}
+                          onEdit={handleEditTask}
+                          onDelete={handleDeleteTask}
+                          onDuplicate={handleDuplicateTask}
+                          onRetry={refetchTasks}
+                          emptyState={{
+                            title: "No tasks yet",
+                            description: "Create your first task to get started with TaskFlow.",
+                            action: {
+                              label: "Create Task",
+                              onClick: () => setShowTaskForm(true),
+                            },
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
                   </div>
                 </>
               )}
 
               {/* Profile View */}
               {activeView === "profile" && (
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-2xl mx-auto overflow-hidden">
                   <UserProfileCard />
                 </div>
               )}
 
               {/* Categories View */}
               {activeView === "categories" && !showCategoryForm && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold">Categories</h2>
-                      <p className="text-muted-foreground">Organize your tasks with custom categories</p>
+                      <h2 className="text-xl font-semibold">Categories</h2>
+                      <p className="text-sm text-muted-foreground">Organize your tasks with custom categories</p>
                     </div>
-                    <Button onClick={() => setShowCategoryForm(true)}>
+                    <Button onClick={() => setShowCategoryForm(true)} size="sm">
                       <Plus className="mr-2 h-4 w-4" />
                       New Category
                     </Button>
                   </div>
-                  <CategoryList
+                  <LazyCategoryList
                     categories={categories}
                     onEdit={handleEditCategory}
                     onDelete={deleteCategory}
@@ -389,48 +603,107 @@ export default function DashboardPage() {
               {/* Category Form View */}
               {activeView === "categories" && showCategoryForm && (
                 <div className="max-w-lg mx-auto">
-                  <CategoryForm
+                  <LazyCategoryForm
                     category={editingCategory}
                     onSubmit={editingCategory ? handleUpdateCategory : handleCreateCategory}
-                    onCancel={handleCancelCategoryForm}
+                    onCancel={() => {
+                      setShowCategoryForm(false);
+                      setEditingCategory(null);
+                    }}
                   />
                 </div>
               )}
 
               {/* Other Views with Filters */}
               {activeView !== "dashboard" && activeView !== "profile" && activeView !== "categories" && (
-                <div className="space-y-6">
-                  <TaskFiltersComponent
-                    filters={taskFiltersState}
-                    categories={categories}
-                    onFiltersChange={setTaskFiltersState}
-                  />
-                  <TaskList
-                    tasks={displayTasks}
-                    loading={filteredTasks.loading}
-                    error={filteredTasks.error}
-                    onToggleComplete={handleToggleComplete}
-                    onEdit={handleEditTask}
-                    onDelete={handleDeleteTask}
-                    onDuplicate={handleDuplicateTask}
-                    onRetry={filteredTasks.refetch}
-                    emptyState={{
-                      title: `No ${activeView} tasks`,
-                      description: `You don't have any ${activeView} tasks yet.`,
-                      action:
-                        activeView !== "completed" && activeView !== "archive"
-                          ? {
-                            label: "Create Task",
-                            onClick: handleNewTask,
-                          }
-                          : undefined,
-                    }}
-                  />
+                <div className="space-y-4">
+                  <Tabs defaultValue="list" className="w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <TabsList className="grid w-full sm:w-auto grid-cols-2">
+                        <TabsTrigger value="list">List View</TabsTrigger>
+                        <TabsTrigger value="grid">Grid View</TabsTrigger>
+                      </TabsList>
+                      <LazyTaskFilters
+                        filters={taskFiltersState}
+                        categories={categories}
+                        onFiltersChange={setTaskFiltersState}
+                      />
+                    </div>
+
+                    <TabsContent value="list" className="space-y-3">
+                      <TaskList
+                        tasks={displayTasks}
+                        loading={allTasksLoading}
+                        onToggleComplete={handleToggleComplete}
+                        onEdit={handleEditTask}
+                        onDelete={handleDeleteTask}
+                        onDuplicate={handleDuplicateTask}
+                        onRetry={refetchTasks}
+                        emptyState={{
+                          title: `No ${activeView} tasks`,
+                          description: `You don't have any ${activeView} tasks yet.`,
+                          action:
+                            activeView !== "completed" && activeView !== "archive"
+                              ? { label: "Create Task", onClick: () => setShowTaskForm(true) }
+                              : undefined,
+                        }}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="grid" className="space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {displayTasks.map((task) => (
+                          <Card key={task.id} className="border-0 bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <CardHeader className="pb-2">
+                              <div className="flex items-start justify-between">
+                                <CardTitle className="text-sm line-clamp-2 break-words">{task.title}</CardTitle>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs px-1.5 py-0.5 h-5 ${task.priority === "high"
+                                    ? "border-rose-200 text-rose-700"
+                                    : task.priority === "medium"
+                                      ? "border-amber-200 text-amber-700"
+                                      : "border-slate-200 text-slate-700"
+                                    }`}
+                                >
+                                  {task.priority}
+                                </Badge>
+                              </div>
+                              {task.description && (
+                                <CardDescription className="line-clamp-2 text-xs break-words">
+                                  {task.description}
+                                </CardDescription>
+                              )}
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="flex items-center justify-between">
+                                {task.due_date && (
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Calendar className="h-3 w-3" />
+                                    {task.due_date}
+                                  </div>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant={task.is_completed ? "default" : "outline"}
+                                  onClick={() => handleToggleComplete(task.id)}
+                                  className="h-7 text-xs"
+                                >
+                                  {task.is_completed ? "Completed" : "Mark Done"}
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               )}
             </div>
           </main>
         </SidebarInset>
+        <Toaster />
       </div>
     </SidebarProvider>
   );
