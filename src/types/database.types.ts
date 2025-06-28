@@ -453,3 +453,21 @@ export interface TaskStats {
   important: number;
 }
 
+export interface CreateTaskData {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  due_date?: string;
+  category_id?: string;
+}
+
+export interface UpdateTaskData {
+  title?: string;
+  description?: string;
+  is_completed?: boolean;
+  priority?: TaskPriority;
+  due_date?: string;
+  category_id?: string;
+  completed_at?: string;
+}
+
