@@ -1,12 +1,30 @@
-import { ThemeToggle } from '@/components/theme-toggle';
-export default function Home() {
+"use client";
+
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import './globals.css';
+export default function HomePage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        router.push("/dashboard");
+      } else {
+        router.push("/login");
+      }
+    }
+  }, [user, loading, router]);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <h1 className="text-2xl text-center font-bold mb-4 text-gray-800 dark:text-gray-100">Hello ToDo</h1>
-      <div className="flex justify-center mb-4">
-        <ThemeToggle />
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading TaskFlow...</p>
       </div>
     </div>
   );
-
 }
