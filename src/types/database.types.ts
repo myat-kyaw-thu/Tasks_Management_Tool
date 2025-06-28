@@ -425,3 +425,16 @@ export interface TaskWithCategory extends Task {
   category: Category | null;
   subtasks?: Subtask[];
 }
+
+// ✅ Additional utility types for better type safety
+export interface TaskFilters {
+  completed?: boolean;
+  priority?: TaskPriority;
+  dueDate?: "today" | "upcoming" | "overdue" | string;
+  categoryId?: string;
+  search?: string;
+  userId?: string;
+  category?: string;
+  due_date?: string;
+}
+
