@@ -438,3 +438,18 @@ export interface TaskFilters {
   due_date?: string;
 }
 
+export interface TaskSortOptions {
+  field: "created_at" | "updated_at" | "due_date" | "priority" | "title" | "sort_order";
+  direction: "asc" | "desc";
+}
+
+export interface TaskStats {
+  total: number;
+  completed: number;
+  pending: number;
+  overdue: number;
+  today: number;
+  upcoming: number;
+  important: number;
+}
+
