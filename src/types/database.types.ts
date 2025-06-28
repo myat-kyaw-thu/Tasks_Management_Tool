@@ -471,3 +471,27 @@ export interface UpdateTaskData {
   completed_at?: string;
 }
 
+// ✅ Real-time subscription payload types
+export interface RealtimePayload<T = any> {
+  eventType: "INSERT" | "UPDATE" | "DELETE";
+  new: T;
+  old: T;
+  errors: any[];
+}
+
+export interface TaskRealtimePayload extends RealtimePayload<Task> { }
+
+// ✅ API Response types
+export interface ApiResponse<T> {
+  data: T | null;
+  error: string | null;
+  loading: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  count: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
