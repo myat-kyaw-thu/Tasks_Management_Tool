@@ -231,31 +231,52 @@ export type Database = {
           id: string;
           user_id: string;
           username: string | null;
-          email_notifications: boolean;
-          daily_digest: boolean;
-          reminder_hours: number;
+          age: number | null;
+          bio: string | null;
+          date_of_birth: string | null;
+          avatar_url: string | null;
+          social_links: Record<string, string>;
+          status: string;
           created_at: string;
           updated_at: string;
+          email_notifications: boolean;
+          daily_digest: boolean;
+          task_reminders: boolean;
+          reminder_hours: number;
         };
         Insert: {
           id?: string;
           user_id: string;
           username?: string | null;
-          email_notifications?: boolean;
-          daily_digest?: boolean;
-          reminder_hours?: number;
+          age?: number | null;
+          bio?: string | null;
+          date_of_birth?: string | null;
+          avatar_url?: string | null;
+          social_links?: Record<string, string>;
+          status?: string;
           created_at?: string;
           updated_at?: string;
+          email_notifications?: boolean;
+          daily_digest?: boolean;
+          task_reminders?: boolean;
+          reminder_hours?: number;
         };
         Update: {
           id?: string;
           user_id?: string;
           username?: string | null;
-          email_notifications?: boolean;
-          daily_digest?: boolean;
-          reminder_hours?: number;
+          age?: number | null;
+          bio?: string | null;
+          date_of_birth?: string | null;
+          avatar_url?: string | null;
+          social_links?: Record<string, string>;
+          status?: string;
           created_at?: string;
           updated_at?: string;
+          email_notifications?: boolean;
+          daily_digest?: boolean;
+          task_reminders?: boolean;
+          reminder_hours?: number;
         };
         Relationships: [
           {
@@ -374,7 +395,7 @@ export type Enums<
   ? Database["public"]["Enums"][PublicEnumNameOrOptions]
   : never;
 
-// Convenience types for common operations
+// ✅ Base types from database
 export type Task = Tables<"tasks">;
 export type TaskInsert = TablesInsert<"tasks">;
 export type TaskUpdate = TablesUpdate<"tasks">;
@@ -398,3 +419,9 @@ export type EmailLogUpdate = TablesUpdate<"email_logs">;
 export type UserProfile = Tables<"user_profiles">;
 export type UserProfileInsert = TablesInsert<"user_profiles">;
 export type UserProfileUpdate = TablesUpdate<"user_profiles">;
+
+
+export interface TaskWithCategory extends Task {
+  category: Category | null;
+  subtasks?: Subtask[];
+}
