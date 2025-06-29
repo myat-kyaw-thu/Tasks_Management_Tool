@@ -81,5 +81,24 @@ export const userProfileClient = {
     }
   },
 
+  async deleteProfile(): Promise<{ error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { error: { message: "User not authenticated" } };
+      }
+
+      const { error } = await supabase.from("user_profiles").delete().eq("user_id", user.id);
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  },
+
 
 };
