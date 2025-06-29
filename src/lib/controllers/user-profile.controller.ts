@@ -100,5 +100,30 @@ export const userProfileClient = {
     }
   },
 
+  async checkUsernameAvailability(
+    username: string,
+    excludeUserId?: string,
+  ): Promise<{ available: boolean; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      let query = supabase.from("user_profiles").select("id").eq("username", username);
+
+      if (excludeUserId) {
+        query = query.neq("user_id", excludeUserId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        return { available: false, error };
+      }
+
+      return { available: !data || data.length === 0, error: null };
+    } catch (error) {
+      return { available: false, error };
+    }
+  },
+
 
 };
