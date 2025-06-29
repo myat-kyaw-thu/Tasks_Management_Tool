@@ -50,5 +50,36 @@ export const userProfileClient = {
     }
   },
 
+  async updateProfile(updates: any): Promise<{ data: any | null; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      // Only send fields that exist in the DB schema
+      const allowedUpdates: any = {};
+      if ('username' in updates) allowedUpdates.username = updates.username;
+      if ('email_notifications' in updates) allowedUpdates.email_notifications = updates.email_notifications;
+      if ('daily_digest' in updates) allowedUpdates.daily_digest = updates.daily_digest;
+      if ('reminder_hours' in updates) allowedUpdates.reminder_hours = updates.reminder_hours;
+
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .update(allowedUpdates)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
 
 };
