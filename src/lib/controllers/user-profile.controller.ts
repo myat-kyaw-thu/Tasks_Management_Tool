@@ -125,5 +125,60 @@ export const userProfileClient = {
     }
   },
 
+  async uploadAvatar(file: File): Promise<{ url: string | null; error: any; }> {
+    const supabase = createClient();
 
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { url: null, error: { message: "User not authenticated" } };
+      }
+
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        return { url: null, error: { message: "Invalid file type. Please upload an image file." } };
+      }
+
+      // Validate file size (5MB max)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        return { url: null, error: { message: "File too large. Please upload an image smaller than 5MB." } };
+      }
+
+      const fileExt = file.name.split(".").pop()?.toLowerCase();
+      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Delete old avatar if exists
+      const { data: existingFiles } = await supabase.storage.from("user-uploads").list(user.id, {
+        search: "avatar-",
+      });
+
+      if (existingFiles && existingFiles.length > 0) {
+        const filesToDelete = existingFiles.map((file) => `${user.id}/${file.name}`);
+        await supabase.storage.from("user-uploads").remove(filesToDelete);
+      }
+
+      // Upload new avatar
+      const { data, error } = await supabase.storage.from("user-uploads").upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+      if (error) {
+        return { url: null, error };
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("user-uploads").getPublicUrl(data.path);
+
+      return { url: publicUrl, error: null };
+    } catch (error) {
+      return { url: null, error };
+    }
+  },
 };
