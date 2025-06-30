@@ -215,4 +215,25 @@ export const notificationController = {
       requireInteraction: type === "task_overdue",
     });
   },
+
+  handleTaskChange(payload: any) {
+    const { eventType, new: newTask, old: oldTask } = payload;
+
+    if (eventType === "INSERT" && newTask?.id && newTask?.title) {
+      this.showTaskNotification(newTask as TaskWithCategory, "task_created");
+    } else if (eventType === "UPDATE" && newTask?.is_completed && !oldTask?.is_completed) {
+      this.showTaskNotification(newTask as TaskWithCategory, "task_completed");
+    } else if (eventType === "UPDATE" && newTask?.due_date && !newTask?.is_completed) {
+      const dueDate = new Date(newTask.due_date);
+      const now = new Date();
+      if (now > dueDate) {
+        this.showTaskNotification(newTask as TaskWithCategory, "task_overdue");
+      } else if (
+        now <= dueDate &&
+        now >= new Date(dueDate.getTime() - this.store.getPreferences().reminderMinutes * 60 * 1000)
+      ) {
+        this.showTaskNotification(newTask as TaskWithCategory, "task_due");
+      }
+    }
+  },
 };
