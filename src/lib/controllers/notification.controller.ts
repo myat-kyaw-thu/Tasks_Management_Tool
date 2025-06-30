@@ -58,7 +58,24 @@ class NotificationStore {
     this.notify();
     return newNotification;
   }
+  markAsRead(id: string) {
+    const notification = this.notifications.find((n) => n.id === id);
+    if (notification && !notification.isRead) {
+      notification.isRead = true;
+      this.notify();
+    }
+  }
 
+  markAllAsRead() {
+    let hasChanges = false;
+    this.notifications.forEach((n) => {
+      if (!n.isRead) {
+        n.isRead = true;
+        hasChanges = true;
+      }
+    });
+    if (hasChanges) this.notify();
+  }
   private notify() {
     this.listeners.forEach((listener) => {
       try {
