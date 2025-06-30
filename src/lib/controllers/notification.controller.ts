@@ -144,4 +144,17 @@ export const notificationController = {
   get store() {
     return getStore();
   },
+
+  async requestPermission(): Promise<boolean> {
+    if (typeof window === "undefined" || !("Notification" in window)) return false;
+    if (Notification.permission === "granted") return true;
+    if (Notification.permission === "denied") return false;
+
+    try {
+      const permission = await Notification.requestPermission();
+      return permission === "granted";
+    } catch {
+      return false;
+    }
+  },
 };
