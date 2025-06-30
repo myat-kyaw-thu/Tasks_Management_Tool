@@ -157,4 +157,19 @@ export const notificationController = {
       return false;
     }
   },
+  showNotification(title: string, options?: NotificationOptions): Notification | null {
+    if (typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") {
+      return null;
+    }
+
+    try {
+      return new Notification(title, {
+        icon: "/favicon.ico",
+        badge: "/favicon.ico",
+        ...options,
+      });
+    } catch {
+      return null;
+    }
+  },
 };
