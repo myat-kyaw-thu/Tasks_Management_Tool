@@ -89,6 +89,19 @@ class NotificationStore {
       this.notify();
     }
   }
+
+  getNotifications() {
+    return [...this.notifications];
+  }
+
+  getUnreadCount() {
+    return this.notifications.filter((n) => !n.isRead).length;
+  }
+
+  getPreferences() {
+    return { ...this.preferences };
+  }
+
   private notify() {
     this.listeners.forEach((listener) => {
       try {
