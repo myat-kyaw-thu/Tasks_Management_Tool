@@ -1,6 +1,6 @@
 "use client";
+import { createClient } from "@/lib/supabase/client";
 import type { TaskWithCategory } from "@/lib/supabase/types";
-import { createClient } from '@supabase/supabase-js';
 
 export interface NotificationItem {
   id: string;
@@ -29,7 +29,6 @@ class NotificationStore {
     dueDateAlerts: true,
     taskCompletions: true,
     reminderMinutes: 60,
-
   };
 
   constructor() {
@@ -40,6 +39,17 @@ class NotificationStore {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
+
+  private notify() {
+    this.listeners.forEach((listener) => {
+      try {
+        listener([...this.notifications]);
+      } catch (error) {
+        console.error("Notification listener error:", error);
+      }
+    });
+  }
+
   addNotification(notification: Omit<NotificationItem, "id" | "createdAt" | "isRead">) {
     if (!notification.title?.trim()) return null;
 
@@ -60,6 +70,7 @@ class NotificationStore {
     this.notify();
     return newNotification;
   }
+
   markAsRead(id: string) {
     const notification = this.notifications.find((n) => n.id === id);
     if (notification && !notification.isRead) {
@@ -103,26 +114,10 @@ class NotificationStore {
   getPreferences() {
     return { ...this.preferences };
   }
+
   updatePreferences(newPrefs: Partial<NotificationPreferences>) {
     this.preferences = { ...this.preferences, ...newPrefs };
     this.savePreferences();
-  }
-  private savePreferences() {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem("taskflow-notification-preferences", JSON.stringify(this.preferences));
-    } catch (error) {
-      console.error("Failed to save preferences:", error);
-    }
-  }
-  private notify() {
-    this.listeners.forEach((listener) => {
-      try {
-        listener([...this.notifications]);
-      } catch (error) {
-        console.error("Notification listener error:", error);
-      }
-    });
   }
 
   private loadPreferences() {
@@ -136,11 +131,19 @@ class NotificationStore {
       console.error("Failed to load preferences:", error);
     }
   }
+
+  private savePreferences() {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("taskflow-notification-preferences", JSON.stringify(this.preferences));
+    } catch (error) {
+      console.error("Failed to save preferences:", error);
+    }
+  }
 }
 
 let storeInstance: NotificationStore | null = null;
 const getStore = () => storeInstance || (storeInstance = new NotificationStore());
-
 
 export const notificationController = {
   get store() {
@@ -159,6 +162,7 @@ export const notificationController = {
       return false;
     }
   },
+
   showNotification(title: string, options?: NotificationOptions): Notification | null {
     if (typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") {
       return null;
@@ -175,6 +179,7 @@ export const notificationController = {
     }
   },
 
+  // Unified method for all task notifications
   async showTaskNotification(task: TaskWithCategory, type: NotificationItem["type"]) {
     if (!task?.id || !task?.title?.trim()) return null;
 
@@ -217,6 +222,75 @@ export const notificationController = {
     });
   },
 
+
+
+  setupRealtimeSubscription(userId: string) {
+    // Return a no-op cleanup if invalid user ID
+    if (!userId?.trim()) return () => { };
+
+    try {
+      const supabase = createClient();
+      const channelName = `user-notifications-${userId}`;
+
+      // Remove any existing matching channels before creating a new one
+      supabase.getChannels().forEach(channel => {
+        if (channel.topic.includes(channelName)) {
+          supabase.removeChannel(channel);
+        }
+      });
+
+      // Create the new channel with a listener on the "tasks" table
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'tasks',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => this.handleTaskChange(payload)
+        );
+
+      // Subscribe to the channel
+      channel.subscribe((status) => {
+        switch (status) {
+          case 'SUBSCRIBED':
+            console.log(`[Supabase] Subscribed to ${channelName}`);
+            break;
+          case 'CHANNEL_ERROR':
+            console.error(`[Supabase] Channel error: ${channelName}`);
+            break;
+          case 'TIMED_OUT':
+            console.warn(`[Supabase] Subscription timed out for ${channelName}`);
+            break;
+          default:
+            console.log(`[Supabase] Channel status: ${status}`);
+        }
+      });
+
+      // Return a cleanup function
+      return () => {
+        try {
+          channel.unsubscribe();
+          supabase.removeChannel(channel);
+          console.log(`[Supabase] Unsubscribed from ${channelName}`);
+        } catch (err) {
+          console.error('Error during channel cleanup:', err);
+        }
+      };
+    } catch (error) {
+      console.error('Failed to setup realtime subscription:', error);
+      return () => { };
+    }
+  },
+
+
+  isValidTask(task: any): boolean {
+    return task?.id?.trim() && task?.title?.trim();
+  },
+
   handleTaskChange(payload: any) {
     const { eventType, new: newTask, old: oldTask } = payload;
 
@@ -237,6 +311,7 @@ export const notificationController = {
       }
     }
   },
+
   async checkTaskReminders(userId: string) {
     if (!userId?.trim()) return;
 
