@@ -76,6 +76,19 @@ class NotificationStore {
     });
     if (hasChanges) this.notify();
   }
+
+  deleteNotification(id: string) {
+    const initialLength = this.notifications.length;
+    this.notifications = this.notifications.filter((n) => n.id !== id);
+    if (this.notifications.length !== initialLength) this.notify();
+  }
+
+  clearAll() {
+    if (this.notifications.length > 0) {
+      this.notifications = [];
+      this.notify();
+    }
+  }
   private notify() {
     this.listeners.forEach((listener) => {
       try {
