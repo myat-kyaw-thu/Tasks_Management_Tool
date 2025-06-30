@@ -19,6 +19,7 @@ export interface NotificationPreferences {
 }
 
 class NotificationStore {
+  private notifications: NotificationItem[] = [];
   private listeners = new Set<(notifications: NotificationItem[]) => void>();
   private preferences: NotificationPreferences = {
     browserNotifications: true,
@@ -36,6 +37,15 @@ class NotificationStore {
   subscribe(listener: (notifications: NotificationItem[]) => void) {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+  private notify() {
+    this.listeners.forEach((listener) => {
+      try {
+        listener([...this.notifications]);
+      } catch (error) {
+        console.error("Notification listener error:", error);
+      }
+    });
   }
 
   private loadPreferences() {
