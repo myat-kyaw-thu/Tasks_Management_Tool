@@ -17,3 +17,30 @@ export interface NotificationPreferences {
   taskCompletions: boolean;
   reminderMinutes: number;
 }
+
+class NotificationStore {
+  private preferences: NotificationPreferences = {
+    browserNotifications: true,
+    taskReminders: true,
+    dueDateAlerts: true,
+    taskCompletions: true,
+    reminderMinutes: 60,
+
+  };
+
+  constructor() {
+    this.loadPreferences();
+  }
+
+  private loadPreferences() {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = localStorage.getItem("taskflow-notification-preferences");
+      if (stored) {
+        this.preferences = { ...this.preferences, ...JSON.parse(stored) };
+      }
+    } catch (error) {
+      console.error("Failed to load preferences:", error);
+    }
+  }
+}
