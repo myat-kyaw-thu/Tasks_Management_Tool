@@ -1,4 +1,5 @@
 "use client";
+import type { TaskWithCategory } from "@/lib/supabase/types";
 
 export interface NotificationItem {
   id: string;
@@ -171,5 +172,47 @@ export const notificationController = {
     } catch {
       return null;
     }
+  },
+
+  async showTaskNotification(task: TaskWithCategory, type: NotificationItem["type"]) {
+    if (!task?.id || !task?.title?.trim()) return null;
+
+    const preferences = this.store.getPreferences();
+
+    // Check if this type of notification is enabled
+    if (!preferences.browserNotifications) return null;
+
+    switch (type) {
+      case "task_created":
+        if (!preferences.taskReminders) return null;
+        break;
+      case "task_completed":
+        if (!preferences.taskCompletions) return null;
+        break;
+      case "task_due":
+      case "task_overdue":
+        if (!preferences.dueDateAlerts) return null;
+        break;
+    }
+
+    const titles = {
+      task_due: "⏰ Task Due",
+      task_overdue: "⚠️ Overdue Task",
+      task_completed: "✅ Task Completed",
+      task_created: "📝 New Task Created",
+    };
+
+    const title = titles[type];
+    const message = `"${task.title.trim()}"`;
+
+    // Add to notification store
+    this.store.addNotification({ type, title, message, taskId: task.id });
+
+    // Show browser notification
+    return this.showNotification(title, {
+      body: message,
+      tag: `task-${type}-${task.id}`,
+      requireInteraction: type === "task_overdue",
+    });
   },
 };
