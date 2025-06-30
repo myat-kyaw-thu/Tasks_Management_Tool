@@ -19,6 +19,7 @@ export interface NotificationPreferences {
 }
 
 class NotificationStore {
+  private listeners = new Set<(notifications: NotificationItem[]) => void>();
   private preferences: NotificationPreferences = {
     browserNotifications: true,
     taskReminders: true,
@@ -30,6 +31,11 @@ class NotificationStore {
 
   constructor() {
     this.loadPreferences();
+  }
+
+  subscribe(listener: (notifications: NotificationItem[]) => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private loadPreferences() {
