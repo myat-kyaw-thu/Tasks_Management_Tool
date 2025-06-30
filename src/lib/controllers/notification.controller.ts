@@ -1,5 +1,6 @@
 "use client";
 import type { TaskWithCategory } from "@/lib/supabase/types";
+import { createClient } from '@supabase/supabase-js';
 
 export interface NotificationItem {
   id: string;
@@ -234,6 +235,42 @@ export const notificationController = {
       ) {
         this.showTaskNotification(newTask as TaskWithCategory, "task_due");
       }
+    }
+  },
+  async checkTaskReminders(userId: string) {
+    if (!userId?.trim()) return;
+
+    const preferences = this.store.getPreferences();
+    if (!preferences.taskReminders && !preferences.dueDateAlerts) return;
+
+    try {
+      const supabase = createClient();
+      const now = new Date();
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+      const { data: tasks } = await supabase
+        .from("tasks")
+        .select("*, category:categories(*)")
+        .eq("user_id", userId)
+        .eq("is_completed", false)
+        .not("due_date", "is", null)
+        .is("deleted_at", null)
+        .lte("due_date", tomorrow.toISOString());
+
+      if (!tasks) return;
+
+      for (const task of tasks.filter(this.isValidTask)) {
+        const dueDate = new Date(task.due_date!);
+        const reminderTime = new Date(dueDate.getTime() - preferences.reminderMinutes * 60 * 1000);
+
+        if (now > dueDate && preferences.dueDateAlerts) {
+          await this.showTaskNotification(task, "task_overdue");
+        } else if (now >= reminderTime && now <= dueDate && preferences.taskReminders) {
+          await this.showTaskNotification(task, "task_due");
+        }
+      }
+    } catch (error) {
+      console.error("Reminder check error:", error);
     }
   },
 };
