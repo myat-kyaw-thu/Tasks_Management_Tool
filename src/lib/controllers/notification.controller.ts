@@ -135,3 +135,6 @@ class NotificationStore {
     }
   }
 }
+
+let storeInstance: NotificationStore | null = null;
+const getStore = () => storeInstance || (storeInstance = new NotificationStore());
