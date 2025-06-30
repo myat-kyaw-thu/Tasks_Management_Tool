@@ -38,6 +38,27 @@ class NotificationStore {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
+  addNotification(notification: Omit<NotificationItem, "id" | "createdAt" | "isRead">) {
+    if (!notification.title?.trim()) return null;
+
+    const newNotification: NotificationItem = {
+      ...notification,
+      id: crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      title: notification.title.trim(),
+      message: notification.message?.trim(),
+    };
+
+    this.notifications.unshift(newNotification);
+    if (this.notifications.length > 50) {
+      this.notifications = this.notifications.slice(0, 50);
+    }
+
+    this.notify();
+    return newNotification;
+  }
+
   private notify() {
     this.listeners.forEach((listener) => {
       try {
