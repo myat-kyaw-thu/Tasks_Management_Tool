@@ -101,7 +101,18 @@ class NotificationStore {
   getPreferences() {
     return { ...this.preferences };
   }
-
+  updatePreferences(newPrefs: Partial<NotificationPreferences>) {
+    this.preferences = { ...this.preferences, ...newPrefs };
+    this.savePreferences();
+  }
+  private savePreferences() {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("taskflow-notification-preferences", JSON.stringify(this.preferences));
+    } catch (error) {
+      console.error("Failed to save preferences:", error);
+    }
+  }
   private notify() {
     this.listeners.forEach((listener) => {
       try {
