@@ -428,3 +428,67 @@ export const taskServer = {
     }
   },
 };
+
+export const taskValidation = {
+  validateTask(task: Partial<TaskInsert>): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+
+    if (!task.title || task.title.trim().length === 0) {
+      errors.push("Title is required");
+    } else if (task.title.length > 255) {
+      errors.push("Title must be less than 255 characters");
+    }
+
+    if (task.description && task.description.length > 1000) {
+      errors.push("Description must be less than 1000 characters");
+    }
+
+    if (task.due_date) {
+      const dueDate = new Date(task.due_date);
+      if (isNaN(dueDate.getTime())) {
+        errors.push("Invalid due date");
+      }
+    }
+
+    if (task.priority && !["low", "medium", "high"].includes(task.priority)) {
+      errors.push("Invalid priority level");
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+
+  validateTaskUpdate(updates: TaskUpdate): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+
+    if (updates.title !== undefined) {
+      if (!updates.title || updates.title.trim().length === 0) {
+        errors.push("Title cannot be empty");
+      } else if (updates.title.length > 255) {
+        errors.push("Title must be less than 255 characters");
+      }
+    }
+
+    if (updates.description !== undefined && updates.description && updates.description.length > 1000) {
+      errors.push("Description must be less than 1000 characters");
+    }
+
+    if (updates.due_date !== undefined && updates.due_date) {
+      const dueDate = new Date(updates.due_date);
+      if (isNaN(dueDate.getTime())) {
+        errors.push("Invalid due date");
+      }
+    }
+
+    if (updates.priority !== undefined && updates.priority && !["low", "medium", "high"].includes(updates.priority)) {
+      errors.push("Invalid priority level");
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+};
