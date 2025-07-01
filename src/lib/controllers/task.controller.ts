@@ -406,5 +406,25 @@ export const taskServer = {
       return { data: [], error };
     }
   },
+  async getTask(taskId: string, userId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
+    const supabase = await createServerClient();
 
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          category:categories(*),
+          subtasks(*)
+        `)
+        .eq("id", taskId)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 };
