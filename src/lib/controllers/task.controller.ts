@@ -302,4 +302,7 @@ export const taskClient = {
       return { error };
     }
   },
+  async getTasksByDate(date: string): Promise<{ data: TaskWithCategory[]; error: any; }> {
+    return this.getTasks({ dueDate: date });
+  },
 };
