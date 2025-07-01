@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import type { TaskInsert, TaskUpdate, TaskWithCategory } from "@/lib/supabase/types";
-
 
 export const taskClient = {
   async getTasks(filters?: {
@@ -382,4 +382,29 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+};
+
+export const taskServer = {
+  async getUserTasks(userId: string): Promise<{ data: TaskWithCategory[]; error: any; }> {
+    const supabase = await createServerClient();
+
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(`
+            *,
+            category:categories(*),
+            subtasks(*)
+          `)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      return { data: data || [], error };
+    } catch (error) {
+      return { data: [], error };
+    }
+  },
+
 };
