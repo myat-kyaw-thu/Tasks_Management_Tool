@@ -193,5 +193,35 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+  async deleteTask(taskId: string, permanent = false): Promise<{ error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { error: { message: "User not authenticated" } };
+      }
+
+      if (permanent) {
+        // Permanently delete the task
+        const { error } = await supabase.from("tasks").delete().eq("id", taskId).eq("user_id", user.id);
+
+        return { error };
+      } else {
+        // Soft delete by setting deleted_at timestamp
+        const { error } = await supabase
+          .from("tasks")
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("id", taskId)
+          .eq("user_id", user.id);
+
+        return { error };
+      }
+    } catch (error) {
+      return { error };
+    }
+  },
 
 };
