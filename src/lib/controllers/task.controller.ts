@@ -256,5 +256,22 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+  async toggleTaskCompletion(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
+    const supabase = createClient();
 
+    try {
+      // First get the current task state
+      const { data: currentTask, error: fetchError } = await this.getTask(taskId);
+      if (fetchError || !currentTask) {
+        return { data: null, error: fetchError || { message: "Task not found" } };
+      }
+
+      // Toggle completion status
+      return await this.updateTask(taskId, {
+        is_completed: !currentTask.is_completed,
+      });
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 };
