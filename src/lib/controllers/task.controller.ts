@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { TaskWithCategory } from "@/lib/supabase/types";
+import type { TaskInsert, TaskWithCategory } from "@/lib/supabase/types";
 
 
 export const taskClient = {
@@ -110,6 +110,47 @@ export const taskClient = {
         .eq("id", taskId)
         .eq("user_id", user.id)
         .is("deleted_at", null)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+  async createTask(task: Omit<TaskInsert, "user_id">): Promise<{ data: TaskWithCategory | null; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      // Get the highest sort_order for this user
+      const { data: lastTask } = await supabase
+        .from("tasks")
+        .select("sort_order")
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .single();
+
+      const newSortOrder = (lastTask?.sort_order || 0) + 1;
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({
+          ...task,
+          user_id: user.id,
+          sort_order: newSortOrder,
+        })
+        .select(`
+            *,
+            category:categories(*),
+            subtasks(*)
+          `)
         .single();
 
       return { data, error };
