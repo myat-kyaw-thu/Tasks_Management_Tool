@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import type { TaskInsert, TaskUpdate, TaskWithCategory } from "@/lib/supabase/types";
 
+// Client-side task operations
 export const taskClient = {
   async getTasks(filters?: {
     completed?: boolean;
@@ -89,6 +90,7 @@ export const taskClient = {
       return { data: [], error };
     }
   },
+
   async getTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
     const supabase = createClient();
 
@@ -117,6 +119,7 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+
   async createTask(task: Omit<TaskInsert, "user_id">): Promise<{ data: TaskWithCategory | null; error: any; }> {
     const supabase = createClient();
 
@@ -147,10 +150,10 @@ export const taskClient = {
           sort_order: newSortOrder,
         })
         .select(`
-            *,
-            category:categories(*),
-            subtasks(*)
-          `)
+          *,
+          category:categories(*),
+          subtasks(*)
+        `)
         .single();
 
       return { data, error };
@@ -158,6 +161,7 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+
   async updateTask(taskId: string, updates: TaskUpdate): Promise<{ data: TaskWithCategory | null; error: any; }> {
     const supabase = createClient();
 
@@ -182,10 +186,10 @@ export const taskClient = {
         .eq("id", taskId)
         .eq("user_id", user.id)
         .select(`
-            *,
-            category:categories(*),
-            subtasks(*)
-          `)
+          *,
+          category:categories(*),
+          subtasks(*)
+        `)
         .single();
 
       return { data, error };
@@ -193,6 +197,7 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+
   async deleteTask(taskId: string, permanent = false): Promise<{ error: any; }> {
     const supabase = createClient();
 
@@ -223,6 +228,7 @@ export const taskClient = {
       return { error };
     }
   },
+
   async duplicateTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
     const supabase = createClient();
 
@@ -256,6 +262,7 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+
   async toggleTaskCompletion(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
     const supabase = createClient();
 
@@ -274,6 +281,7 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+
   async reorderTasks(taskIds: string[]): Promise<{ error: any; }> {
     const supabase = createClient();
 
@@ -302,9 +310,11 @@ export const taskClient = {
       return { error };
     }
   },
+
   async getTasksByDate(date: string): Promise<{ data: TaskWithCategory[]; error: any; }> {
     return this.getTasks({ dueDate: date });
   },
+
   async getOverdueTasks(): Promise<{ data: TaskWithCategory[]; error: any; }> {
     const supabase = createClient();
 
@@ -336,6 +346,7 @@ export const taskClient = {
       return { data: [], error };
     }
   },
+
   async getTaskStats(): Promise<{
     data: {
       total: number;
@@ -384,6 +395,7 @@ export const taskClient = {
   },
 };
 
+// Server-side task operations
 export const taskServer = {
   async getUserTasks(userId: string): Promise<{ data: TaskWithCategory[]; error: any; }> {
     const supabase = await createServerClient();
@@ -392,10 +404,10 @@ export const taskServer = {
       const { data, error } = await supabase
         .from("tasks")
         .select(`
-            *,
-            category:categories(*),
-            subtasks(*)
-          `)
+          *,
+          category:categories(*),
+          subtasks(*)
+        `)
         .eq("user_id", userId)
         .is("deleted_at", null)
         .order("sort_order", { ascending: true })
@@ -406,6 +418,7 @@ export const taskServer = {
       return { data: [], error };
     }
   },
+
   async getTask(taskId: string, userId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
     const supabase = await createServerClient();
 
@@ -429,6 +442,7 @@ export const taskServer = {
   },
 };
 
+// Task validation utilities
 export const taskValidation = {
   validateTask(task: Partial<TaskInsert>): { isValid: boolean; errors: string[]; } {
     const errors: string[] = [];
