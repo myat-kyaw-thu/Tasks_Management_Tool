@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { TaskInsert, TaskWithCategory } from "@/lib/supabase/types";
+import type { TaskInsert, TaskUpdate, TaskWithCategory } from "@/lib/supabase/types";
 
 
 export const taskClient = {
@@ -158,4 +158,40 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+  async updateTask(taskId: string, updates: TaskUpdate): Promise<{ data: TaskWithCategory | null; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      // If completing a task, set completed_at timestamp
+      if (updates.is_completed === true && !updates.completed_at) {
+        updates.completed_at = new Date().toISOString();
+      } else if (updates.is_completed === false) {
+        updates.completed_at = null;
+      }
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(updates)
+        .eq("id", taskId)
+        .eq("user_id", user.id)
+        .select(`
+            *,
+            category:categories(*),
+            subtasks(*)
+          `)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
 };
