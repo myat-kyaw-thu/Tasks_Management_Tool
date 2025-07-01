@@ -274,4 +274,32 @@ export const taskClient = {
       return { data: null, error };
     }
   },
+  async reorderTasks(taskIds: string[]): Promise<{ error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { error: { message: "User not authenticated" } };
+      }
+
+      // Update sort_order for each task
+      let error = null;
+      for (let i = 0; i < taskIds.length; i++) {
+        const { error: updateError } = await supabase
+          .from("tasks")
+          .update({ sort_order: i + 1 })
+          .eq("id", taskIds[i]);
+        if (updateError) {
+          error = updateError;
+        }
+      }
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  },
 };
