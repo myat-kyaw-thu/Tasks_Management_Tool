@@ -336,4 +336,50 @@ export const taskClient = {
       return { data: [], error };
     }
   },
+  async getTaskStats(): Promise<{
+    data: {
+      total: number;
+      completed: number;
+      pending: number;
+      overdue: number;
+      today: number;
+    } | null;
+    error: any;
+  }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      // Get all tasks for the user
+      const { data: allTasks, error } = await supabase
+        .from("tasks")
+        .select("is_completed, due_date")
+        .eq("user_id", user.id)
+        .is("deleted_at", null);
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      const stats = {
+        total: allTasks.length,
+        completed: allTasks.filter((task) => task.is_completed).length,
+        pending: allTasks.filter((task) => !task.is_completed).length,
+        overdue: allTasks.filter((task) => !task.is_completed && task.due_date && task.due_date < today).length,
+        today: allTasks.filter((task) => task.due_date === today).length,
+      };
+
+      return { data: stats, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 };
