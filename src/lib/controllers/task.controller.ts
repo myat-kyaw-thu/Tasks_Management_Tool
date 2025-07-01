@@ -305,4 +305,35 @@ export const taskClient = {
   async getTasksByDate(date: string): Promise<{ data: TaskWithCategory[]; error: any; }> {
     return this.getTasks({ dueDate: date });
   },
+  async getOverdueTasks(): Promise<{ data: TaskWithCategory[]; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: [], error: { message: "User not authenticated" } };
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          category:categories(*),
+          subtasks(*)
+        `)
+        .eq("user_id", user.id)
+        .eq("is_completed", false)
+        .lt("due_date", today)
+        .is("deleted_at", null)
+        .order("due_date", { ascending: true });
+
+      return { data: data || [], error };
+    } catch (error) {
+      return { data: [], error };
+    }
+  },
 };
