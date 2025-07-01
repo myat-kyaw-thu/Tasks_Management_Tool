@@ -89,5 +89,32 @@ export const taskClient = {
       return { data: [], error };
     }
   },
+  async getTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
+    const supabase = createClient();
 
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(`
+          *,
+          category:categories(*),
+          subtasks(*)
+        `)
+        .eq("id", taskId)
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 };
