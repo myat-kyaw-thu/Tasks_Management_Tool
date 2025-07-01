@@ -21,8 +21,17 @@ export interface NotificationPreferences {
 }
 
 class NotificationStore {
+  // Store all the Notifications data in memory
+  //  (Subject) -> for Observer Pattern
   private notifications: NotificationItem[] = [];
+
+  // Tracks all UI components that want to be notified when notifications change
+  // When notifications change, all subscribed components automatically re-render
+  // (Subject) -> for Observer Pattern
   private listeners = new Set<(notifications: NotificationItem[]) => void>();
+
+  // User's notification settings/configuration
+  // Users want to customize their notification experience
   private preferences: NotificationPreferences = {
     browserNotifications: true,
     taskReminders: true,
