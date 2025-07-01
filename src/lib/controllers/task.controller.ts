@@ -223,5 +223,38 @@ export const taskClient = {
       return { error };
     }
   },
+  async duplicateTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      // Get the original task
+      const { data: originalTask, error: fetchError } = await this.getTask(taskId);
+      if (fetchError || !originalTask) {
+        return { data: null, error: fetchError || { message: "Task not found" } };
+      }
+
+      // Create a copy of the task
+      const taskCopy: Omit<TaskInsert, "user_id"> = {
+        title: `${originalTask.title} (Copy)`,
+        description: originalTask.description,
+        category_id: originalTask.category_id,
+        priority: originalTask.priority,
+        due_date: originalTask.due_date,
+        is_completed: false,
+        completed_at: null,
+      };
+
+      return await this.createTask(taskCopy);
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 
 };
