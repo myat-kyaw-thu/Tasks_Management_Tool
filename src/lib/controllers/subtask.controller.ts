@@ -125,3 +125,24 @@ export const subtaskClient = {
     }
   },
 };
+
+export const subtaskValidation = {
+  validateSubtask(subtask: Partial<SubtaskInsert>): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+
+    if (!subtask.title || subtask.title.trim().length === 0) {
+      errors.push("Subtask title is required");
+    } else if (subtask.title.length > 255) {
+      errors.push("Subtask title must be less than 255 characters");
+    }
+
+    if (!subtask.task_id) {
+      errors.push("Task ID is required");
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+};
