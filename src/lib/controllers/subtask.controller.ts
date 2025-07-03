@@ -68,5 +68,32 @@ export const subtaskClient = {
       return { error };
     }
   },
+  async toggleSubtaskCompletion(subtaskId: string): Promise<{ data: Subtask | null; error: any; }> {
+    const supabase = createClient();
 
+    try {
+      // First get the current subtask state
+      const { data: currentSubtask, error: fetchError } = await supabase
+        .from("subtasks")
+        .select("is_completed")
+        .eq("id", subtaskId)
+        .single();
+
+      if (fetchError) {
+        return { data: null, error: fetchError };
+      }
+
+      // Toggle completion status
+      const { data, error } = await supabase
+        .from("subtasks")
+        .update({ is_completed: !currentSubtask.is_completed })
+        .eq("id", subtaskId)
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 };
