@@ -57,4 +57,16 @@ export const subtaskClient = {
       return { data: null, error };
     }
   },
+  async deleteSubtask(subtaskId: string): Promise<{ error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase.from("subtasks").delete().eq("id", subtaskId);
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  },
+
 };
