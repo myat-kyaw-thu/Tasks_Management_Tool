@@ -96,4 +96,32 @@ export const subtaskClient = {
       return { data: null, error };
     }
   },
+  async reorderSubtasks(subtaskIds: string[]): Promise<{ error: any; }> {
+    const supabase = createClient();
+
+    try {
+      // Update sort_order for each subtask
+      const updates = subtaskIds.map((subtaskId, index) => ({
+        id: subtaskId,
+        sort_order: index + 1,
+      }));
+
+      // Only update the 'sort_order' field for each subtask using update, not upsert
+      let error = null;
+      for (const update of updates) {
+        const { error: updateError } = await supabase
+          .from("subtasks")
+          .update({ sort_order: update.sort_order })
+          .eq("id", update.id);
+        if (updateError) {
+          error = updateError;
+          break;
+        }
+      }
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  },
 };
