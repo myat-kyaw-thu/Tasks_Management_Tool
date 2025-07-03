@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Subtask, SubtaskInsert } from "@/lib/supabase/types";
+import type { Subtask, SubtaskInsert, SubtaskUpdate } from "@/lib/supabase/types";
 
 export const subtaskClient = {
   async getSubtasks(taskId: string): Promise<{ data: Subtask[]; error: any; }> {
@@ -40,6 +40,17 @@ export const subtaskClient = {
         })
         .select()
         .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+  async updateSubtask(subtaskId: string, updates: SubtaskUpdate): Promise<{ data: Subtask | null; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const { data, error } = await supabase.from("subtasks").update(updates).eq("id", subtaskId).select().single();
 
       return { data, error };
     } catch (error) {
