@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Subtask, SubtaskInsert, SubtaskUpdate } from "@/lib/supabase/types";
 
+// Client-side subtask operations
 export const subtaskClient = {
   async getSubtasks(taskId: string): Promise<{ data: Subtask[]; error: any; }> {
     const supabase = createClient();
+
     try {
       const { data, error } = await supabase
         .from("subtasks")
@@ -17,6 +19,7 @@ export const subtaskClient = {
       return { data: [], error };
     }
   },
+
   async createSubtask(subtask: Omit<SubtaskInsert, "sort_order">): Promise<{ data: Subtask | null; error: any; }> {
     const supabase = createClient();
 
@@ -46,6 +49,7 @@ export const subtaskClient = {
       return { data: null, error };
     }
   },
+
   async updateSubtask(subtaskId: string, updates: SubtaskUpdate): Promise<{ data: Subtask | null; error: any; }> {
     const supabase = createClient();
 
@@ -57,6 +61,7 @@ export const subtaskClient = {
       return { data: null, error };
     }
   },
+
   async deleteSubtask(subtaskId: string): Promise<{ error: any; }> {
     const supabase = createClient();
 
@@ -68,6 +73,7 @@ export const subtaskClient = {
       return { error };
     }
   },
+
   async toggleSubtaskCompletion(subtaskId: string): Promise<{ data: Subtask | null; error: any; }> {
     const supabase = createClient();
 
@@ -96,6 +102,7 @@ export const subtaskClient = {
       return { data: null, error };
     }
   },
+
   async reorderSubtasks(subtaskIds: string[]): Promise<{ error: any; }> {
     const supabase = createClient();
 
@@ -126,6 +133,7 @@ export const subtaskClient = {
   },
 };
 
+// Subtask validation utilities
 export const subtaskValidation = {
   validateSubtask(subtask: Partial<SubtaskInsert>): { isValid: boolean; errors: string[]; } {
     const errors: string[] = [];
