@@ -223,5 +223,13 @@ export function useCategories() {
       setError(null);
       fetchedRef.current = null;
     }
-  }, [userId]); // Only depend on userId
+  }, [userId]); // Only depend on 
+  // Add cleanup effect at the end of the hook:
+  useEffect(() => {
+    return () => {
+      // Cleanup all pending operations
+      cleanupRef.current.forEach((cleanup) => cleanup());
+      cleanupRef.current = [];
+    };
+  }, []);
 }
