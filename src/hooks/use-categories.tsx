@@ -3,8 +3,8 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
-import { categoryClient } from "@/lib/controllers/category.controller";
-import type { Category } from "@/lib/supabase/types";
+import { categoryClient, categoryValidation } from "@/lib/controllers/category.controller";
+import type { Category, CategoryInsert } from "@/lib/supabase/types";
 import { useCallback, useRef, useState } from "react";
 // Add caching import at the top
 import { cacheUtils } from "@/lib/performance/caching";
@@ -82,4 +82,51 @@ export function useCategories() {
       }
     }
   }, [userId]);
+  const createCategory = useCallback(
+    async (categoryData: Omit<CategoryInsert, "user_id">) => {
+      if (!userId) return { success: false, error: "User not authenticated" };
+
+      try {
+        const validation = categoryValidation.validateCategory(categoryData);
+        if (!validation.isValid) {
+          toast({
+            title: "Invalid category data",
+            description: validation.errors[0],
+
+          });
+          return { success: false, error: validation.errors };
+        }
+
+        const { data, error } = await categoryClient.createCategory(categoryData);
+
+        if (error) {
+          toast({
+            title: "Failed to create category",
+            description: error.message,
+
+          });
+          return { success: false, error };
+        }
+
+        setCategories((prev) => [...prev, data!]);
+
+        // Invalidate cache after successful creation
+        cacheUtils.setCachedCategories(userId, [...categories, data!]);
+
+        toast({
+          title: "Category created",
+          description: "Your category has been created successfully",
+        });
+        return { success: true, data };
+      } catch (err) {
+        toast({
+          title: "Failed to create category",
+          description: "An unexpected error occurred",
+
+        });
+        return { success: false, error: err };
+      }
+    },
+    [userId, categories],
+  );
 }
