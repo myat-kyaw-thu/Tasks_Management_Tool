@@ -178,4 +178,40 @@ export function useCategories() {
     },
     [categories],
   );
+
+  const deleteCategory = useCallback(
+    async (categoryId: string) => {
+      try {
+        const originalCategories = [...categories];
+        setCategories((prev) => prev.filter((category) => category.id !== categoryId));
+
+        const { error } = await categoryClient.deleteCategory(categoryId);
+
+        if (error) {
+          setCategories(originalCategories);
+          toast({
+            title: "Failed to delete category",
+            description: error.message,
+
+          });
+          return { success: false, error };
+        }
+
+        toast({
+          title: "Category deleted",
+          description: "Category and its tasks have been updated",
+        });
+        return { success: true };
+      } catch (err) {
+        toast({
+          title: "Failed to delete category",
+          description: "An unexpected error occurred",
+
+        });
+        return { success: false, error: err };
+      }
+    },
+    [categories],
+  );
+
 }
