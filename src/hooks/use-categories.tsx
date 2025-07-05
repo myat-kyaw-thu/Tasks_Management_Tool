@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { categoryClient, categoryValidation } from "@/lib/controllers/category.controller";
 import type { Category, CategoryInsert, CategoryUpdate } from "@/lib/supabase/types";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 // Add caching import at the top
 import { cacheUtils } from "@/lib/performance/caching";
 
@@ -213,5 +213,15 @@ export function useCategories() {
     },
     [categories],
   );
-
+  // Simple effect that only runs when userId changes
+  useEffect(() => {
+    if (userId && fetchedRef.current !== userId) {
+      fetchCategories();
+    } else if (!userId) {
+      setCategories([]);
+      setLoading(false);
+      setError(null);
+      fetchedRef.current = null;
+    }
+  }, [userId]); // Only depend on userId
 }
