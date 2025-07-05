@@ -4,7 +4,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { categoryClient, categoryValidation } from "@/lib/controllers/category.controller";
-import type { Category, CategoryInsert } from "@/lib/supabase/types";
+import type { Category, CategoryInsert, CategoryUpdate } from "@/lib/supabase/types";
 import { useCallback, useRef, useState } from "react";
 // Add caching import at the top
 import { cacheUtils } from "@/lib/performance/caching";
@@ -128,5 +128,54 @@ export function useCategories() {
       }
     },
     [userId, categories],
+  );
+  const updateCategory = useCallback(
+    async (categoryId: string, updates: CategoryUpdate) => {
+      try {
+        const validation = categoryValidation.validateCategory(updates);
+        if (!validation.isValid) {
+          toast({
+            title: "Invalid category data",
+            description: validation.errors[0],
+
+          });
+          return { success: false, error: validation.errors };
+        }
+
+        const originalCategories = [...categories];
+        setCategories((prev) =>
+          prev.map((category) =>
+            category.id === categoryId ? { ...category, ...updates, updated_at: new Date().toISOString() } : category,
+          ),
+        );
+
+        const { data, error } = await categoryClient.updateCategory(categoryId, updates);
+
+        if (error) {
+          setCategories(originalCategories);
+          toast({
+            title: "Failed to update category",
+            description: error.message,
+
+          });
+          return { success: false, error };
+        }
+
+        setCategories((prev) => prev.map((category) => (category.id === categoryId ? data! : category)));
+        toast({
+          title: "Category updated",
+          description: "Your category has been updated successfully",
+        });
+        return { success: true, data };
+      } catch (err) {
+        toast({
+          title: "Failed to update category",
+          description: "An unexpected error occurred",
+
+        });
+        return { success: false, error: err };
+      }
+    },
+    [categories],
   );
 }
