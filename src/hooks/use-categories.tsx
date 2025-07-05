@@ -1,16 +1,15 @@
 "use client";
 
-
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
 import { categoryClient, categoryValidation } from "@/lib/controllers/category.controller";
 import type { Category, CategoryInsert, CategoryUpdate } from "@/lib/supabase/types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Add caching import at the top
 import { cacheUtils } from "@/lib/performance/caching";
 
-// Add caching import at the top
 export function useCategories() {
+  // Add cleanup ref at the top of the hook
   const cleanupRef = useRef<(() => void)[]>([]);
   const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -19,6 +18,8 @@ export function useCategories() {
   const fetchedRef = useRef<string | null>(null);
 
   const userId = user?.id;
+
+  // In the fetchCategories function, add abort controller:
   const fetchCategories = useCallback(async () => {
     if (!userId) {
       setCategories([]);
@@ -82,6 +83,7 @@ export function useCategories() {
       }
     }
   }, [userId]);
+
   const createCategory = useCallback(
     async (categoryData: Omit<CategoryInsert, "user_id">) => {
       if (!userId) return { success: false, error: "User not authenticated" };
@@ -129,6 +131,7 @@ export function useCategories() {
     },
     [userId, categories],
   );
+
   const updateCategory = useCallback(
     async (categoryId: string, updates: CategoryUpdate) => {
       try {
@@ -213,6 +216,7 @@ export function useCategories() {
     },
     [categories],
   );
+
   // Simple effect that only runs when userId changes
   useEffect(() => {
     if (userId && fetchedRef.current !== userId) {
@@ -223,7 +227,8 @@ export function useCategories() {
       setError(null);
       fetchedRef.current = null;
     }
-  }, [userId]); // Only depend on 
+  }, [userId]); // Only depend on userId
+
   // Add cleanup effect at the end of the hook:
   useEffect(() => {
     return () => {
@@ -232,4 +237,17 @@ export function useCategories() {
       cleanupRef.current = [];
     };
   }, []);
+
+  return useMemo(
+    () => ({
+      categories,
+      loading,
+      error,
+      createCategory,
+      updateCategory,
+      deleteCategory,
+      refetch: fetchCategories,
+    }),
+    [categories, loading, error, createCategory, updateCategory, deleteCategory, fetchCategories],
+  );
 }
