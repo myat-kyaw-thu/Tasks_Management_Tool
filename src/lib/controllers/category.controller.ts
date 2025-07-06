@@ -97,4 +97,27 @@ export const categoryClient = {
       return { data: null, error };
     }
   },
+  async deleteCategory(categoryId: string): Promise<{ error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { error: { message: "User not authenticated" } };
+      }
+
+      // First, update all tasks with this category to have no category
+      await supabase.from("tasks").update({ category_id: null }).eq("category_id", categoryId).eq("user_id", user.id);
+
+      // Then delete the category
+      const { error } = await supabase.from("categories").delete().eq("id", categoryId).eq("user_id", user.id);
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  },
+
 };
