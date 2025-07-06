@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Category, CategoryInsert, CategoryUpdate } from "@/lib/supabase/types";
+import type { Category, CategoryColor, CategoryInsert, CategoryUpdate } from "@/lib/supabase/types";
 
 
 export const categoryClient = {
@@ -153,5 +153,41 @@ export const categoryClient = {
     } catch (error) {
       return { data: [], error };
     }
+  },
+};
+export const categoryValidation = {
+  validateCategory(category: Partial<CategoryInsert>): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+
+    if (!category.name || category.name.trim().length === 0) {
+      errors.push("Category name is required");
+    } else if (category.name.length > 100) {
+      errors.push("Category name must be less than 100 characters");
+    }
+
+    if (category.description && category.description.length > 500) {
+      errors.push("Category description must be less than 500 characters");
+    }
+
+    const validColors: CategoryColor[] = [
+      "blue",
+      "green",
+      "yellow",
+      "red",
+      "purple",
+      "pink",
+      "indigo",
+      "gray",
+      "orange",
+      "teal",
+    ];
+    if (category.color && !validColors.includes(category.color)) {
+      errors.push("Invalid category color");
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
   },
 };
