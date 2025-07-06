@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Category, CategoryInsert } from "@/lib/supabase/types";
+import type { Category, CategoryInsert, CategoryUpdate } from "@/lib/supabase/types";
 
 
 export const categoryClient = {
@@ -65,6 +65,30 @@ export const categoryClient = {
           ...category,
           user_id: user.id,
         })
+        .select()
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+  async updateCategory(categoryId: string, updates: CategoryUpdate): Promise<{ data: Category | null; error: any; }> {
+    const supabase = createClient();
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      const { data, error } = await supabase
+        .from("categories")
+        .update(updates)
+        .eq("id", categoryId)
+        .eq("user_id", user.id)
         .select()
         .single();
 
