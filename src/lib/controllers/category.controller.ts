@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Category, CategoryColor, CategoryInsert, CategoryUpdate } from "@/lib/supabase/types";
 
-
+// Client-side category operations
 export const categoryClient = {
   async getCategories(): Promise<{ data: Category[]; error: any; }> {
     const supabase = createClient();
@@ -25,6 +25,7 @@ export const categoryClient = {
       return { data: [], error };
     }
   },
+
   async getCategory(categoryId: string): Promise<{ data: Category | null; error: any; }> {
     const supabase = createClient();
 
@@ -48,6 +49,7 @@ export const categoryClient = {
       return { data: null, error };
     }
   },
+
   async createCategory(category: Omit<CategoryInsert, "user_id">): Promise<{ data: Category | null; error: any; }> {
     const supabase = createClient();
 
@@ -73,6 +75,7 @@ export const categoryClient = {
       return { data: null, error };
     }
   },
+
   async updateCategory(categoryId: string, updates: CategoryUpdate): Promise<{ data: Category | null; error: any; }> {
     const supabase = createClient();
 
@@ -97,6 +100,7 @@ export const categoryClient = {
       return { data: null, error };
     }
   },
+
   async deleteCategory(categoryId: string): Promise<{ error: any; }> {
     const supabase = createClient();
 
@@ -119,6 +123,7 @@ export const categoryClient = {
       return { error };
     }
   },
+
   async getCategoriesWithTaskCount(): Promise<{ data: (Category & { task_count: number; })[]; error: any; }> {
     const supabase = createClient();
 
@@ -155,6 +160,8 @@ export const categoryClient = {
     }
   },
 };
+
+// Category validation utilities
 export const categoryValidation = {
   validateCategory(category: Partial<CategoryInsert>): { isValid: boolean; errors: string[]; } {
     const errors: string[] = [];
