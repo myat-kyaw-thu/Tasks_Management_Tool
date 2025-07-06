@@ -119,5 +119,39 @@ export const categoryClient = {
       return { error };
     }
   },
+  async getCategoriesWithTaskCount(): Promise<{ data: (Category & { task_count: number; })[]; error: any; }> {
+    const supabase = createClient();
 
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: [], error: { message: "User not authenticated" } };
+      }
+
+      const { data, error } = await supabase
+        .from("categories")
+        .select(`
+          *,
+          tasks!inner(count)
+        `)
+        .eq("user_id", user.id)
+        .eq("tasks.user_id", user.id)
+        .is("tasks.deleted_at", null);
+
+      if (error) {
+        return { data: [], error };
+      }
+
+      const categoriesWithCount = data.map((category: any) => ({
+        ...category,
+        task_count: category.tasks?.[0]?.count || 0,
+      }));
+
+      return { data: categoriesWithCount, error: null };
+    } catch (error) {
+      return { data: [], error };
+    }
+  },
 };
