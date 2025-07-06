@@ -25,5 +25,27 @@ export const categoryClient = {
       return { data: [], error };
     }
   },
+  async getCategory(categoryId: string): Promise<{ data: Category | null; error: any; }> {
+    const supabase = createClient();
 
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return { data: null, error: { message: "User not authenticated" } };
+      }
+
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("id", categoryId)
+        .eq("user_id", user.id)
+        .single();
+
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 };
