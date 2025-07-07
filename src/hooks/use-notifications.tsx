@@ -147,5 +147,12 @@ export function useNotifications() {
       setError("Failed to mark notification as read");
     }
   }, []);
-
+  const markAllAsRead = useCallback(() => {
+    try {
+      notificationController.store.markAllAsRead();
+      setError(null);
+    } catch (err) {
+      setError("Failed to mark all notifications as read");
+    }
+  }, []);
 }
