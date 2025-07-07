@@ -38,4 +38,13 @@ export function useNotifications() {
       unsubscribe();
     };
   }, []);
+  // Check permission status on mount
+  useEffect(() => {
+    if (!isMounted) return;
+
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setPermissionGranted(Notification.permission === "granted");
+    }
+  }, [isMounted]);
+
 }
