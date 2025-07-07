@@ -119,5 +119,33 @@ export function useNotifications() {
       }
     };
   }, [isMounted, user, permissionGranted]);
+  useEffect(() => {
+    if (!isMounted || !user || !preferences.taskReminders || !permissionGranted) return;
+
+    if (reminderIntervalRef.current) {
+      clearInterval(reminderIntervalRef.current);
+    }
+
+    // Check immediately
+    notificationController.checkTaskReminders(user.id);
+
+    // Then check every 5 minutes
+    reminderIntervalRef.current = setInterval(() => notificationController.checkTaskReminders(user.id), 5 * 60 * 1000);
+
+    return () => {
+      if (reminderIntervalRef.current) {
+        clearInterval(reminderIntervalRef.current);
+        reminderIntervalRef.current = null;
+      }
+    };
+  }, [isMounted, user, preferences.taskReminders, permissionGranted]);
+  const markAsRead = useCallback((notificationId: string) => {
+    try {
+      notificationController.store.markAsRead(notificationId);
+      setError(null);
+    } catch (err) {
+      setError("Failed to mark notification as read");
+    }
+  }, []);
 
 }
