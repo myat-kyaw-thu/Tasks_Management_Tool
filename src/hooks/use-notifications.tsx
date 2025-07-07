@@ -76,5 +76,23 @@ export function useNotifications() {
       setIsLoading(false);
     }
   }, [isMounted]);
+  const updatePreferences = useCallback((newPreferences: Partial<NotificationPreferences>) => {
+    try {
+      notificationController.store.updatePreferences(newPreferences);
+      setPreferences(notificationController.store.getPreferences());
+      setError(null);
+
+      toast({
+        title: "Preferences updated",
+        description: "Your notification settings have been saved",
+      });
+    } catch (err) {
+      setError("Failed to update preferences");
+      toast({
+        title: "Error",
+        description: "Failed to update notification preferences",
+      });
+    }
+  }, []);
 
 }
