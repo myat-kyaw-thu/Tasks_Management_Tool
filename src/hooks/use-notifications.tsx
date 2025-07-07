@@ -3,7 +3,8 @@
 import { useAuth } from "@/hooks/use-auth";
 import type { NotificationItem, NotificationPreferences } from "@/lib/controllers/notification.controller";
 import { notificationController } from "@/lib/controllers/notification.controller";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from 'sonner';
 
 export function useNotifications() {
   const { user } = useAuth();
@@ -44,6 +45,35 @@ export function useNotifications() {
 
     if (typeof window !== "undefined" && "Notification" in window) {
       setPermissionGranted(Notification.permission === "granted");
+    }
+  }, [isMounted]);
+  const requestPermission = useCallback(async () => {
+    if (!isMounted) return false;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const granted = await notificationController.requestPermission();
+      setPermissionGranted(granted);
+
+      toast({
+        title: granted ? "Notifications enabled" : "Notifications blocked",
+        description: granted
+          ? "You'll receive task reminders and alerts"
+          : "Please enable notifications in your browser settings",
+      });
+
+      return granted;
+    } catch (err) {
+      setError("Failed to request notification permission");
+      toast({
+        title: "Error",
+        description: "Failed to request notification permission",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   }, [isMounted]);
 
