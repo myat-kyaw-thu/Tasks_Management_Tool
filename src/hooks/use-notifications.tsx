@@ -1,10 +1,10 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import { toast } from "@/hooks/use-toast";
 import type { NotificationItem, NotificationPreferences } from "@/lib/controllers/notification.controller";
 import { notificationController } from "@/lib/controllers/notification.controller";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from 'sonner';
 
 export function useNotifications() {
   const { user } = useAuth();
@@ -39,6 +39,7 @@ export function useNotifications() {
       unsubscribe();
     };
   }, []);
+
   // Check permission status on mount
   useEffect(() => {
     if (!isMounted) return;
@@ -47,6 +48,7 @@ export function useNotifications() {
       setPermissionGranted(Notification.permission === "granted");
     }
   }, [isMounted]);
+
   const requestPermission = useCallback(async () => {
     if (!isMounted) return false;
 
@@ -76,6 +78,7 @@ export function useNotifications() {
       setIsLoading(false);
     }
   }, [isMounted]);
+
   const updatePreferences = useCallback((newPreferences: Partial<NotificationPreferences>) => {
     try {
       notificationController.store.updatePreferences(newPreferences);
@@ -94,6 +97,7 @@ export function useNotifications() {
       });
     }
   }, []);
+
   // Setup real-time subscription
   useEffect(() => {
     if (!isMounted || !user || !permissionGranted) return;
@@ -119,6 +123,8 @@ export function useNotifications() {
       }
     };
   }, [isMounted, user, permissionGranted]);
+
+  // Setup reminder checks
   useEffect(() => {
     if (!isMounted || !user || !preferences.taskReminders || !permissionGranted) return;
 
@@ -139,6 +145,7 @@ export function useNotifications() {
       }
     };
   }, [isMounted, user, preferences.taskReminders, permissionGranted]);
+
   const markAsRead = useCallback((notificationId: string) => {
     try {
       notificationController.store.markAsRead(notificationId);
@@ -147,6 +154,7 @@ export function useNotifications() {
       setError("Failed to mark notification as read");
     }
   }, []);
+
   const markAllAsRead = useCallback(() => {
     try {
       notificationController.store.markAllAsRead();
@@ -155,6 +163,7 @@ export function useNotifications() {
       setError("Failed to mark all notifications as read");
     }
   }, []);
+
   const deleteNotification = useCallback((notificationId: string) => {
     try {
       notificationController.store.deleteNotification(notificationId);
@@ -172,4 +181,22 @@ export function useNotifications() {
       setError("Failed to clear all notifications");
     }
   }, []);
+
+  const unreadCount = notificationController.store.getUnreadCount();
+
+  return {
+    notifications,
+    unreadCount,
+    preferences,
+    permissionGranted,
+    isSubscribed,
+    isLoading,
+    error,
+    requestPermission,
+    updatePreferences,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAllNotifications,
+  };
 }
