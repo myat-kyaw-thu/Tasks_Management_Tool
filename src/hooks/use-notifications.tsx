@@ -94,5 +94,30 @@ export function useNotifications() {
       });
     }
   }, []);
+  // Setup real-time subscription
+  useEffect(() => {
+    if (!isMounted || !user || !permissionGranted) return;
+
+    setIsLoading(true);
+    try {
+      const unsubscribe = notificationController.setupRealtimeSubscription(user.id);
+      unsubscribeRealtimeRef.current = unsubscribe;
+      setIsSubscribed(true);
+      setError(null);
+    } catch (err) {
+      setError("Failed to connect to notification service");
+      setIsSubscribed(false);
+    } finally {
+      setIsLoading(false);
+    }
+
+    return () => {
+      if (unsubscribeRealtimeRef.current) {
+        unsubscribeRealtimeRef.current();
+        unsubscribeRealtimeRef.current = null;
+        setIsSubscribed(false);
+      }
+    };
+  }, [isMounted, user, permissionGranted]);
 
 }
