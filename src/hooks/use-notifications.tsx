@@ -155,4 +155,21 @@ export function useNotifications() {
       setError("Failed to mark all notifications as read");
     }
   }, []);
+  const deleteNotification = useCallback((notificationId: string) => {
+    try {
+      notificationController.store.deleteNotification(notificationId);
+      setError(null);
+    } catch (err) {
+      setError("Failed to delete notification");
+    }
+  }, []);
+
+  const clearAllNotifications = useCallback(() => {
+    try {
+      notificationController.store.clearAll();
+      setError(null);
+    } catch (err) {
+      setError("Failed to clear all notifications");
+    }
+  }, []);
 }
