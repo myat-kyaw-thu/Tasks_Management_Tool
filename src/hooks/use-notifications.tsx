@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import type { NotificationItem, NotificationPreferences } from "@/lib/controllers/notification.controller";
 import { notificationController } from "@/lib/controllers/notification.controller";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useNotifications() {
   const { user } = useAuth();
@@ -18,4 +18,24 @@ export function useNotifications() {
   const reminderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const unsubscribeRealtimeRef = useRef<(() => void) | null>(null);
 
+  useEffect(() => {
+    setIsMounted(true);
+    // No cleanup needed, so return nothing (do not return a boolean)
+  }, []);
+
+  // Subscribe to notification store changes
+  useEffect(() => {
+    const unsubscribe = notificationController.store.subscribe((newNotifications) => {
+      setNotifications(newNotifications);
+      setError(null);
+    });
+
+    // Initialize with current notifications
+    setNotifications(notificationController.store.getNotifications());
+    setPreferences(notificationController.store.getPreferences());
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 }
