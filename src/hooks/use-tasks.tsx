@@ -162,4 +162,41 @@ class TasksManager {
     }
   }
 
+  private async handleRealtimeUpdate(payload: any) {
+    const { eventType, new: newRecord, old: oldRecord } = payload;
+
+    switch (eventType) {
+      case "INSERT":
+        this.allTasks = [newRecord, ...this.allTasks];
+        // Trigger task created notification
+        try {
+          await notificationController.showTaskNotification(newRecord, "task_created");
+        } catch (error) {
+          console.error("Error showing task created notification:", error);
+        }
+        break;
+      case "UPDATE":
+        this.allTasks = this.allTasks.map((task) => (task.id === newRecord.id ? { ...task, ...newRecord } : task));
+        // Trigger task completion notification
+        try {
+          if (!oldRecord.is_completed && newRecord.is_completed) {
+            await notificationController.showTaskNotification(newRecord, "task_completed");
+          }
+        } catch (error) {
+          console.error("Error showing task completion notification:", error);
+        }
+        break;
+      case "DELETE":
+        this.allTasks = this.allTasks.filter((task) => task.id !== oldRecord.id);
+        break;
+    }
+
+    // Update cache
+    if (this.userId) {
+      cacheUtils.setCachedTaskStats(this.userId, this.allTasks);
+    }
+
+    this.notify();
+  }
+
 }
