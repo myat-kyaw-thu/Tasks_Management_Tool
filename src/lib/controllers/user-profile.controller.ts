@@ -182,3 +182,57 @@ export const userProfileClient = {
     }
   },
 };
+
+// Profile validation utilities
+export const profileValidation = {
+  validateUsername(username: string): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+    if (!username || username.trim().length === 0) {
+      errors.push("Username is required");
+    } else {
+      if (username.length < 3) {
+        errors.push("Username must be at least 3 characters long");
+      }
+      if (username.length > 50) {
+        errors.push("Username must be less than 50 characters");
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+        errors.push("Username can only contain letters, numbers, underscores, and hyphens");
+      }
+    }
+    return { isValid: errors.length === 0, errors };
+  },
+
+  validateAge(age: number): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+    if (isNaN(age)) {
+      errors.push("Age must be a valid number");
+    } else {
+      if (age < 13) {
+        errors.push("Age must be at least 13");
+      }
+      if (age > 120) {
+        errors.push("Age must be less than 120");
+      }
+    }
+    return { isValid: errors.length === 0, errors };
+  },
+
+  validateBio(bio: string): { isValid: boolean; errors: string[]; } {
+    const errors: string[] = [];
+    if (bio && bio.length > 500) {
+      errors.push("Bio must be less than 500 characters");
+    }
+    return { isValid: errors.length === 0, errors };
+  },
+
+  validateSocialLink(url: string): boolean {
+    if (!url) return true;
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+};
