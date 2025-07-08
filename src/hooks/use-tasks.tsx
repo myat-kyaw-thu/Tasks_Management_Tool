@@ -34,4 +34,10 @@ class TasksManager {
   private supabase = createClient();
   private userId: string | null = null;
 
+  static getInstance(): TasksManager {
+    if (!TasksManager.instance) {
+      TasksManager.instance = new TasksManager();
+    }
+    return TasksManager.instance;
+  }
 }
