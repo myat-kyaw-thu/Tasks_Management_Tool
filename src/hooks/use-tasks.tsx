@@ -276,5 +276,26 @@ class TasksManager {
       throw error;
     }
   }
+  async deleteTask(id: string) {
+    if (!this.userId) throw new Error("User not authenticated");
 
+    // Optimistic update
+    const originalTasks = [...this.allTasks];
+    this.allTasks = this.allTasks.filter((task) => task.id !== id);
+    this.notify();
+
+    try {
+      const { error } = await this.supabase.from("tasks").delete().eq("id", id).eq("user_id", this.userId);
+
+      if (error) throw error;
+
+      // Update cache
+      cacheUtils.setCachedTaskStats(this.userId, this.allTasks);
+    } catch (error) {
+      // Rollback optimistic update
+      this.allTasks = originalTasks;
+      this.notify();
+      throw error;
+    }
+  }
 }
