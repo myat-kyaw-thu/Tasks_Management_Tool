@@ -242,4 +242,39 @@ class TasksManager {
       this.notify();
     }
   }
+  async updateTask(id: string, updates: Partial<Task>) {
+    if (!this.userId) throw new Error("User not authenticated");
+
+    // Optimistic update
+    const originalTask = this.allTasks.find((task) => task.id === id);
+    if (!originalTask) return;
+
+    const updatedTask = { ...originalTask, ...updates, updated_at: new Date().toISOString() };
+    this.allTasks = this.allTasks.map((task) => (task.id === id ? updatedTask : task));
+    this.notify();
+
+    try {
+      const { error } = await this.supabase.from("tasks").update(updates).eq("id", id).eq("user_id", this.userId);
+
+      if (error) throw error;
+
+      // Update cache
+      cacheUtils.setCachedTaskStats(this.userId, this.allTasks);
+
+      // Trigger task completion notification
+      try {
+        if (updates.is_completed === true && originalTask.is_completed === false) {
+          await notificationController.showTaskNotification(updatedTask as any, "task_completed");
+        }
+      } catch (notificationError) {
+        console.error("Error showing task completion notification:", notificationError);
+      }
+    } catch (error) {
+      // Rollback optimistic update
+      this.allTasks = this.allTasks.map((task) => (task.id === id ? originalTask : task));
+      this.notify();
+      throw error;
+    }
+  }
+
 }
