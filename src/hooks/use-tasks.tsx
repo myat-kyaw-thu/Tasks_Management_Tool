@@ -1,6 +1,7 @@
 "use client";
 
 
+import { cacheUtils } from '@/lib/performance/caching';
 import { createClient } from "@/lib/supabase/client";
 import type { Task, TaskFilters, TaskSortOptions } from "@/types/database.types";
 
@@ -50,5 +51,54 @@ class TasksManager {
     this.subscribers.forEach((callback) => callback());
   }
 
+  private async fetchTasks() {
+    if (!this.userId) return;
 
+    this.loading = true;
+    this.error = null;
+    this.notify();
+
+    try {
+      // Check cache first
+      const cached = cacheUtils.getCachedTaskStats(this.userId);
+      if (cached && Array.isArray(cached)) {
+        this.allTasks = cached;
+        this.loading = false;
+        this.notify();
+        return;
+      }
+
+      const { data, error } = await this.supabase
+        .from("tasks")
+        .select(`
+          id,
+          title,
+          description,
+          is_completed,
+          priority,
+          due_date,
+          created_at,
+          updated_at,
+          user_id,
+          category:categories(id, name, color),
+          subtasks(id, title, is_completed)
+        `)
+        .eq("user_id", this.userId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      this.allTasks = (data as unknown as Task[]) || [];
+      this.loading = false;
+      this.error = null;
+
+      // Cache the results
+      cacheUtils.setCachedTaskStats(this.userId, this.allTasks);
+    } catch (err) {
+      this.error = err instanceof Error ? err.message : "Failed to fetch tasks";
+      this.loading = false;
+    }
+
+    this.notify();
+  }
 }
