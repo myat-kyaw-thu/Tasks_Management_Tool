@@ -101,4 +101,34 @@ class TasksManager {
 
     this.notify();
   }
+
+  private setupRealtimeSubscription() {
+    if (!this.userId || this.realtimeSubscription) return;
+
+    // Use a unique channel name for tasks to avoid conflicts with notification subscriptions
+    const channelName = `user-tasks-${this.userId}-${Date.now()}`;
+
+    this.realtimeSubscription = this.supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tasks",
+          filter: `user_id=eq.${this.userId}`,
+        },
+        (payload) => {
+          this.handleRealtimeUpdate(payload);
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("Task subscription established");
+        } else if (status === "CHANNEL_ERROR") {
+          console.error("Task subscription error");
+        }
+      });
+  }
+
 }
