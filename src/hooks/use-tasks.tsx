@@ -198,5 +198,48 @@ class TasksManager {
 
     this.notify();
   }
+  async createTask(taskData: Omit<Task, "id" | "created_at" | "updated_at">) {
+    if (!this.userId) throw new Error("User not authenticated");
 
+    // Optimistic update
+    const optimisticTask: Task = {
+      ...taskData,
+      id: `temp-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user_id: this.userId,
+    };
+
+    this.allTasks = [optimisticTask, ...this.allTasks];
+    this.notify();
+
+    try {
+      const { data, error } = await this.supabase
+        .from("tasks")
+        .insert([{ ...taskData, user_id: this.userId }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Replace optimistic update with real data
+      this.allTasks = this.allTasks.map((task) => (task.id === optimisticTask.id ? data : task));
+
+      // Update cache
+      cacheUtils.setCachedTaskStats(this.userId, this.allTasks);
+
+      // Trigger task created notification
+      try {
+        await notificationController.showTaskNotification(data as any, "task_created");
+      } catch (notificationError) {
+        console.error("Error showing task created notification:", notificationError);
+      }
+    } catch (error) {
+      // Rollback optimistic update
+      this.allTasks = this.allTasks.filter((task) => task.id !== optimisticTask.id);
+      throw error;
+    } finally {
+      this.notify();
+    }
+  }
 }
