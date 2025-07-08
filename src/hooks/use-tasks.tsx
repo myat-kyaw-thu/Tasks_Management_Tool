@@ -316,4 +316,40 @@ class TasksManager {
   getError(): string | null {
     return this.error;
   }
+  getFilteredTasks(filters?: TaskFilters): Task[] {
+    let filtered = [...this.allTasks];
+
+    if (filters?.completed !== undefined) {
+      filtered = filtered.filter((task) => task.is_completed === filters.completed);
+    }
+
+    if (filters?.priority) {
+      filtered = filtered.filter((task) => task.priority === filters.priority);
+    }
+
+    if (filters?.dueDate) {
+      const today = new Date().toISOString().split("T")[0];
+      switch (filters.dueDate) {
+        case "today":
+          filtered = filtered.filter((task) => task.due_date === today);
+          break;
+        case "upcoming":
+          filtered = filtered.filter((task) => task.due_date && task.due_date > today && !task.is_completed);
+          break;
+        case "overdue":
+          filtered = filtered.filter((task) => task.due_date && task.due_date < today && !task.is_completed);
+          break;
+      }
+    }
+
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (task) =>
+          task.title.toLowerCase().includes(searchLower) || task.description?.toLowerCase().includes(searchLower),
+      );
+    }
+
+    return filtered;
+  }
 }
