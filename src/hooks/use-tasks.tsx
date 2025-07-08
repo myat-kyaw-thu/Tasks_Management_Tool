@@ -298,4 +298,22 @@ class TasksManager {
       throw error;
     }
   }
+  async toggleTask(id: string) {
+    const task = this.allTasks.find((t) => t.id === id);
+    if (!task) return;
+
+    await this.updateTask(id, { is_completed: !task.is_completed });
+  }
+  // Getters
+  getTasks(): Task[] {
+    return this.allTasks;
+  }
+
+  getLoading(): boolean {
+    return this.loading;
+  }
+
+  getError(): string | null {
+    return this.error;
+  }
 }
