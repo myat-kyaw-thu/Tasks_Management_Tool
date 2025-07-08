@@ -5,6 +5,7 @@ import { notificationController } from '@/lib/controllers/notification.controlle
 import { cacheUtils } from '@/lib/performance/caching';
 import { createClient } from "@/lib/supabase/client";
 import type { Task, TaskFilters, TaskSortOptions } from "@/types/database.types";
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 
 interface UseTasksOptions {
   filters?: TaskFilters;
@@ -363,4 +364,63 @@ class TasksManager {
     }
     this.subscribers.clear();
   }
+}
+export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
+  const { filters, autoFetch = true, enableRealtime = true } = options;
+  const manager = TasksManager.getInstance();
+  const [, forceUpdate] = useState({});
+  const userIdRef = useRef<string | null>(null);
+
+  // Force re-render when manager state changes
+  const rerender = useCallback(() => {
+    forceUpdate({});
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = manager.subscribe(rerender);
+    return () => {
+      unsubscribe();
+    };
+  }, [rerender]);
+
+  // Initialize with current user
+  useEffect(() => {
+    const initializeManager = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user && user.id !== userIdRef.current) {
+        userIdRef.current = user.id;
+        if (autoFetch) {
+          await manager.initialize(user.id);
+        }
+      }
+    };
+
+    initializeManager();
+  }, [autoFetch, manager]);
+
+  const filteredTasks = useMemo(() => {
+    return manager.getFilteredTasks(filters);
+  }, [manager.getTasks(), filters]);
+
+  const refetch = useCallback(async () => {
+    if (userIdRef.current) {
+      await manager.initialize(userIdRef.current);
+    }
+  }, [manager]);
+
+  return {
+    tasks: filteredTasks,
+    loading: manager.getLoading(),
+    error: manager.getError(),
+    totalCount: manager.getTasks().length,
+    refetch,
+    createTask: manager.createTask.bind(manager),
+    updateTask: manager.updateTask.bind(manager),
+    deleteTask: manager.deleteTask.bind(manager),
+    toggleTask: manager.toggleTask.bind(manager),
+  };
 }
