@@ -1,6 +1,7 @@
 "use client";
 
 
+import { notificationController } from '@/lib/controllers/notification.controller';
 import { cacheUtils } from '@/lib/performance/caching';
 import { createClient } from "@/lib/supabase/client";
 import type { Task, TaskFilters, TaskSortOptions } from "@/types/database.types";
@@ -129,6 +130,36 @@ class TasksManager {
           console.error("Task subscription error");
         }
       });
+  }
+  private async checkDueDates() {
+    if (!this.userId) return;
+
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+
+    // Get notification preferences
+    const preferences = notificationController.store.getPreferences();
+    if (!preferences.dueDateAlerts && !preferences.taskReminders) return;
+
+    for (const task of this.allTasks) {
+      if (task.is_completed || !task.due_date) continue;
+
+      const dueDate = new Date(task.due_date);
+      const isOverdue = dueDate < now;
+      const isDueToday = task.due_date === today;
+      const reminderTime = new Date(dueDate.getTime() - preferences.reminderMinutes * 60 * 1000);
+      const shouldRemind = now >= reminderTime && now <= dueDate;
+
+      try {
+        if (isOverdue && preferences.dueDateAlerts) {
+          await notificationController.showTaskNotification(task as any, "task_overdue");
+        } else if ((isDueToday || shouldRemind) && preferences.taskReminders) {
+          await notificationController.showTaskNotification(task as any, "task_due");
+        }
+      } catch (error) {
+        console.error("Error showing due date notification:", error);
+      }
+    }
   }
 
 }
