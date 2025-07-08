@@ -352,4 +352,15 @@ class TasksManager {
 
     return filtered;
   }
+  cleanup() {
+    if (this.realtimeSubscription) {
+      this.realtimeSubscription.unsubscribe();
+      this.realtimeSubscription = null;
+    }
+    if (this.dueDateCheckInterval) {
+      clearInterval(this.dueDateCheckInterval);
+      this.dueDateCheckInterval = null;
+    }
+    this.subscribers.clear();
+  }
 }
