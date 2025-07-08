@@ -1,11 +1,10 @@
 "use client";
 
-
-import { notificationController } from '@/lib/controllers/notification.controller';
-import { cacheUtils } from '@/lib/performance/caching';
+import { notificationController } from "@/lib/controllers/notification.controller";
+import { cacheUtils } from "@/lib/performance/caching";
 import { createClient } from "@/lib/supabase/client";
 import type { Task, TaskFilters, TaskSortOptions } from "@/types/database.types";
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface UseTasksOptions {
   filters?: TaskFilters;
@@ -26,6 +25,7 @@ interface UseTasksReturn {
   toggleTask: (id: string) => Promise<void>;
 }
 
+// Singleton state management
 class TasksManager {
   private static instance: TasksManager;
   private allTasks: Task[] = [];
@@ -51,6 +51,17 @@ class TasksManager {
 
   private notify() {
     this.subscribers.forEach((callback) => callback());
+  }
+
+  async initialize(userId: string) {
+    if (this.userId === userId && this.allTasks.length > 0) {
+      return; // Already initialized for this user
+    }
+
+    this.userId = userId;
+    await this.fetchTasks();
+    this.setupRealtimeSubscription();
+    this.setupDueDateMonitoring();
   }
 
   private async fetchTasks() {
@@ -132,6 +143,22 @@ class TasksManager {
         }
       });
   }
+
+  private setupDueDateMonitoring() {
+    if (!this.userId || this.dueDateCheckInterval) return;
+
+    // Check immediately
+    this.checkDueDates();
+
+    // Then check every 5 minutes
+    this.dueDateCheckInterval = setInterval(
+      () => {
+        this.checkDueDates();
+      },
+      5 * 60 * 1000,
+    );
+  }
+
   private async checkDueDates() {
     if (!this.userId) return;
 
@@ -199,6 +226,8 @@ class TasksManager {
 
     this.notify();
   }
+
+  // CRUD Operations with notification triggers
   async createTask(taskData: Omit<Task, "id" | "created_at" | "updated_at">) {
     if (!this.userId) throw new Error("User not authenticated");
 
@@ -243,6 +272,7 @@ class TasksManager {
       this.notify();
     }
   }
+
   async updateTask(id: string, updates: Partial<Task>) {
     if (!this.userId) throw new Error("User not authenticated");
 
@@ -277,6 +307,7 @@ class TasksManager {
       throw error;
     }
   }
+
   async deleteTask(id: string) {
     if (!this.userId) throw new Error("User not authenticated");
 
@@ -299,12 +330,14 @@ class TasksManager {
       throw error;
     }
   }
+
   async toggleTask(id: string) {
     const task = this.allTasks.find((t) => t.id === id);
     if (!task) return;
 
     await this.updateTask(id, { is_completed: !task.is_completed });
   }
+
   // Getters
   getTasks(): Task[] {
     return this.allTasks;
@@ -317,6 +350,7 @@ class TasksManager {
   getError(): string | null {
     return this.error;
   }
+
   getFilteredTasks(filters?: TaskFilters): Task[] {
     let filtered = [...this.allTasks];
 
@@ -353,6 +387,7 @@ class TasksManager {
 
     return filtered;
   }
+
   cleanup() {
     if (this.realtimeSubscription) {
       this.realtimeSubscription.unsubscribe();
@@ -365,6 +400,7 @@ class TasksManager {
     this.subscribers.clear();
   }
 }
+
 export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
   const { filters, autoFetch = true, enableRealtime = true } = options;
   const manager = TasksManager.getInstance();
