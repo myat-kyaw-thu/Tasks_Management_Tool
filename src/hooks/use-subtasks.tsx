@@ -168,5 +168,41 @@ export function useSubtasks(taskId: string | null) {
     },
     [subtasks],
   );
+  const toggleSubtaskCompletion = useCallback(
+    async (subtaskId: string) => {
+      try {
+        const originalSubtasks = [...subtasks];
+        setSubtasks((prev) =>
+          prev.map((subtask) =>
+            subtask.id === subtaskId
+              ? { ...subtask, is_completed: !subtask.is_completed, updated_at: new Date().toISOString() }
+              : subtask,
+          ),
+        );
 
+        const { data, error } = await subtaskClient.toggleSubtaskCompletion(subtaskId);
+
+        if (error) {
+          setSubtasks(originalSubtasks);
+          toast({
+            title: "Failed to update subtask",
+            description: error.message,
+
+          });
+          return { success: false, error };
+        }
+
+        setSubtasks((prev) => prev.map((subtask) => (subtask.id === subtaskId ? data! : subtask)));
+        return { success: true, data };
+      } catch (err) {
+        toast({
+          title: "Failed to update subtask",
+          description: "An unexpected error occurred",
+
+        });
+        return { success: false, error: err };
+      }
+    },
+    [subtasks],
+  );
 }
