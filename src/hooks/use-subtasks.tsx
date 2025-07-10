@@ -2,7 +2,7 @@
 
 import { toast } from "@/hooks/use-toast";
 import { subtaskClient, subtaskValidation } from "@/lib/controllers/subtask.controller";
-import type { Subtask, SubtaskInsert } from "@/lib/supabase/types";
+import type { Subtask, SubtaskInsert, SubtaskUpdate } from "@/lib/supabase/types";
 import { useCallback, useState } from "react";
 
 
@@ -88,5 +88,50 @@ export function useSubtasks(taskId: string | null) {
       }
     },
     [taskId],
+  );
+  const updateSubtask = useCallback(
+    async (subtaskId: string, updates: SubtaskUpdate) => {
+      try {
+        const validation = subtaskValidation.validateSubtask(updates);
+        if (!validation.isValid) {
+          toast({
+            title: "Invalid subtask data",
+            description: validation.errors[0],
+
+          });
+          return { success: false, error: validation.errors };
+        }
+
+        const originalSubtasks = [...subtasks];
+        setSubtasks((prev) =>
+          prev.map((subtask) =>
+            subtask.id === subtaskId ? { ...subtask, ...updates, updated_at: new Date().toISOString() } : subtask,
+          ),
+        );
+
+        const { data, error } = await subtaskClient.updateSubtask(subtaskId, updates);
+
+        if (error) {
+          setSubtasks(originalSubtasks);
+          toast({
+            title: "Failed to update subtask",
+            description: error.message,
+
+          });
+          return { success: false, error };
+        }
+
+        setSubtasks((prev) => prev.map((subtask) => (subtask.id === subtaskId ? data! : subtask)));
+        return { success: true, data };
+      } catch (err) {
+        toast({
+          title: "Failed to update subtask",
+          description: "An unexpected error occurred",
+
+        });
+        return { success: false, error: err };
+      }
+    },
+    [subtasks],
   );
 }
