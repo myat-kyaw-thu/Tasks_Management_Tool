@@ -134,4 +134,39 @@ export function useSubtasks(taskId: string | null) {
     },
     [subtasks],
   );
+  const deleteSubtask = useCallback(
+    async (subtaskId: string) => {
+      try {
+        const originalSubtasks = [...subtasks];
+        setSubtasks((prev) => prev.filter((subtask) => subtask.id !== subtaskId));
+
+        const { error } = await subtaskClient.deleteSubtask(subtaskId);
+
+        if (error) {
+          setSubtasks(originalSubtasks);
+          toast({
+            title: "Failed to delete subtask",
+            description: error.message,
+
+          });
+          return { success: false, error };
+        }
+
+        toast({
+          title: "Subtask deleted",
+          description: "Your subtask has been deleted",
+        });
+        return { success: true };
+      } catch (err) {
+        toast({
+          title: "Failed to delete subtask",
+          description: "An unexpected error occurred",
+
+        });
+        return { success: false, error: err };
+      }
+    },
+    [subtasks],
+  );
+
 }
