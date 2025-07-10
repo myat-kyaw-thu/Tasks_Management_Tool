@@ -3,8 +3,7 @@
 import { toast } from "@/hooks/use-toast";
 import { subtaskClient, subtaskValidation } from "@/lib/controllers/subtask.controller";
 import type { Subtask, SubtaskInsert, SubtaskUpdate } from "@/lib/supabase/types";
-import { useCallback, useState } from "react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useSubtasks(taskId: string | null) {
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
@@ -89,6 +88,7 @@ export function useSubtasks(taskId: string | null) {
     },
     [taskId],
   );
+
   const updateSubtask = useCallback(
     async (subtaskId: string, updates: SubtaskUpdate) => {
       try {
@@ -134,6 +134,7 @@ export function useSubtasks(taskId: string | null) {
     },
     [subtasks],
   );
+
   const deleteSubtask = useCallback(
     async (subtaskId: string) => {
       try {
@@ -168,6 +169,7 @@ export function useSubtasks(taskId: string | null) {
     },
     [subtasks],
   );
+
   const toggleSubtaskCompletion = useCallback(
     async (subtaskId: string) => {
       try {
@@ -205,6 +207,7 @@ export function useSubtasks(taskId: string | null) {
     },
     [subtasks],
   );
+
   const reorderSubtasks = useCallback(
     async (subtaskIds: string[]) => {
       try {
@@ -235,5 +238,34 @@ export function useSubtasks(taskId: string | null) {
       }
     },
     [subtasks],
+  );
+
+  useEffect(() => {
+    fetchSubtasks();
+  }, [fetchSubtasks]);
+
+  return useMemo(
+    () => ({
+      subtasks,
+      loading,
+      error,
+      createSubtask,
+      updateSubtask,
+      deleteSubtask,
+      toggleSubtaskCompletion,
+      reorderSubtasks,
+      refetch: fetchSubtasks,
+    }),
+    [
+      subtasks,
+      loading,
+      error,
+      createSubtask,
+      updateSubtask,
+      deleteSubtask,
+      toggleSubtaskCompletion,
+      reorderSubtasks,
+      fetchSubtasks,
+    ],
   );
 }
