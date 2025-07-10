@@ -205,4 +205,35 @@ export function useSubtasks(taskId: string | null) {
     },
     [subtasks],
   );
+  const reorderSubtasks = useCallback(
+    async (subtaskIds: string[]) => {
+      try {
+        const originalSubtasks = [...subtasks];
+        const reorderedSubtasks = subtaskIds.map((id) => subtasks.find((subtask) => subtask.id === id)!).filter(Boolean);
+        setSubtasks(reorderedSubtasks);
+
+        const { error } = await subtaskClient.reorderSubtasks(subtaskIds);
+
+        if (error) {
+          setSubtasks(originalSubtasks);
+          toast({
+            title: "Failed to reorder subtasks",
+            description: error.message,
+
+          });
+          return { success: false, error };
+        }
+
+        return { success: true };
+      } catch (err) {
+        toast({
+          title: "Failed to reorder subtasks",
+          description: "An unexpected error occurred",
+
+        });
+        return { success: false, error: err };
+      }
+    },
+    [subtasks],
+  );
 }
