@@ -64,8 +64,15 @@ export const userProfileClient = {
       // Only send fields that exist in the DB schema
       const allowedUpdates: any = {};
       if ('username' in updates) allowedUpdates.username = updates.username;
+      if ('age' in updates) allowedUpdates.age = updates.age;
+      if ('bio' in updates) allowedUpdates.bio = updates.bio;
+      if ('date_of_birth' in updates) allowedUpdates.date_of_birth = updates.date_of_birth;
+      if ('avatar_url' in updates) allowedUpdates.avatar_url = updates.avatar_url;
+      if ('social_links' in updates) allowedUpdates.social_links = updates.social_links;
+      if ('status' in updates) allowedUpdates.status = updates.status;
       if ('email_notifications' in updates) allowedUpdates.email_notifications = updates.email_notifications;
       if ('daily_digest' in updates) allowedUpdates.daily_digest = updates.daily_digest;
+      if ('task_reminders' in updates) allowedUpdates.task_reminders = updates.task_reminders;
       if ('reminder_hours' in updates) allowedUpdates.reminder_hours = updates.reminder_hours;
 
       const { data, error } = await supabase
