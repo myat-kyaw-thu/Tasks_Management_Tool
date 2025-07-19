@@ -416,9 +416,24 @@ export type EmailLog = Tables<"email_logs">;
 export type EmailLogInsert = TablesInsert<"email_logs">;
 export type EmailLogUpdate = TablesUpdate<"email_logs">;
 
-export type UserProfile = Tables<"user_profiles">;
-export type UserProfileInsert = TablesInsert<"user_profiles">;
-export type UserProfileUpdate = TablesUpdate<"user_profiles">;
+// Import UserStatus from user-profile types
+import type { SocialLinks, UserStatus } from "./user-profile.types";
+
+// Override the database UserProfile type with proper typing
+export interface UserProfile extends Omit<Tables<"user_profiles">, "status" | "social_links"> {
+  status: UserStatus;
+  social_links: SocialLinks;
+}
+
+export interface UserProfileInsert extends Omit<TablesInsert<"user_profiles">, "status" | "social_links"> {
+  status?: UserStatus;
+  social_links?: SocialLinks;
+}
+
+export interface UserProfileUpdate extends Omit<TablesUpdate<"user_profiles">, "status" | "social_links"> {
+  status?: UserStatus;
+  social_links?: SocialLinks;
+}
 
 
 export interface TaskWithCategory extends Task {
@@ -471,12 +486,36 @@ export interface UpdateTaskData {
   completed_at?: string;
 }
 
+// ✅ Error types for better type safety
+export interface DatabaseError {
+  message: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
+
+export interface AuthError {
+  message: string;
+  status?: number;
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface ApiError {
+  message: string;
+  code?: string;
+  details?: unknown;
+}
+
 // ✅ Real-time subscription payload types
-export interface RealtimePayload<T = any> {
+export interface RealtimePayload<T = Record<string, unknown>> {
   eventType: "INSERT" | "UPDATE" | "DELETE";
   new: T;
   old: T;
-  errors: any[];
+  errors: DatabaseError[];
 }
 
 export interface TaskRealtimePayload extends RealtimePayload<Task> { }
@@ -484,7 +523,7 @@ export interface TaskRealtimePayload extends RealtimePayload<Task> { }
 // ✅ API Response types
 export interface ApiResponse<T> {
   data: T | null;
-  error: string | null;
+  error: DatabaseError | AuthError | ApiError | null;
   loading: boolean;
 }
 
@@ -494,4 +533,20 @@ export interface PaginatedResponse<T> {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+// ✅ Controller response types
+export interface ControllerResponse<T> {
+  data: T | null;
+  error: DatabaseError | AuthError | null;
+}
+
+export interface ControllerSuccessResponse<T> {
+  success: true;
+  data: T;
+}
+
+export interface ControllerErrorResponse {
+  success: false;
+  error: DatabaseError | AuthError | ValidationError[];
 }

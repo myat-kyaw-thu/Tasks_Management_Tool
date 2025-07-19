@@ -32,9 +32,8 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
-import { EmailLogs } from "@/components/email/email-logs";
-import { EmailSettingsContainer } from "@/components/email/email-settings-container";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SettingsPage() {
   const { user, signOut, resetPassword } = useAuth();
@@ -466,13 +465,13 @@ export default function SettingsPage() {
                 <TabsTrigger value="history">Email History</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="settings">
+              {/* <TabsContent value="settings">
                 <EmailSettingsContainer userId={user?.id || ""} />
               </TabsContent>
 
               <TabsContent value="history">
                 <EmailLogs userId={user?.id || ""} />
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </section>
 

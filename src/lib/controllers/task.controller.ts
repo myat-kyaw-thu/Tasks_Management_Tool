@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import type { TaskInsert, TaskUpdate, TaskWithCategory } from "@/lib/supabase/types";
 
+import type { DatabaseError } from '@/types/database.types';
 // Client-side task operations
 export const taskClient = {
   async getTasks(filters?: {
@@ -10,7 +11,7 @@ export const taskClient = {
     priority?: string;
     dueDate?: string;
     search?: string;
-  }): Promise<{ data: TaskWithCategory[]; error: any; }> {
+  }): Promise<{ data: TaskWithCategory[]; error: DatabaseError | null; }> {
     const supabase = createClient();
 
     try {
@@ -87,11 +88,14 @@ export const taskClient = {
 
       return { data: data || [], error };
     } catch (error) {
-      return { data: [], error };
+      return {
+        data: [],
+        error: { message: error instanceof Error ? error.message : 'An unexpected error occurred' }
+      };
     }
   },
 
-  async getTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
+  async getTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: DatabaseError | null; }> {
     const supabase = createClient();
 
     try {
@@ -116,11 +120,14 @@ export const taskClient = {
 
       return { data, error };
     } catch (error) {
-      return { data: null, error };
+      return {
+        data: null,
+        error: { message: error instanceof Error ? error.message : 'An unexpected error occurred' }
+      };
     }
   },
 
-  async createTask(task: Omit<TaskInsert, "user_id">): Promise<{ data: TaskWithCategory | null; error: any; }> {
+  async createTask(task: Omit<TaskInsert, "user_id">): Promise<{ data: TaskWithCategory | null; error: DatabaseError | null; }> {
     const supabase = createClient();
 
     try {
@@ -158,11 +165,14 @@ export const taskClient = {
 
       return { data, error };
     } catch (error) {
-      return { data: null, error };
+      return {
+        data: null,
+        error: { message: error instanceof Error ? error.message : 'An unexpected error occurred' }
+      };
     }
   },
 
-  async updateTask(taskId: string, updates: TaskUpdate): Promise<{ data: TaskWithCategory | null; error: any; }> {
+  async updateTask(taskId: string, updates: TaskUpdate): Promise<{ data: TaskWithCategory | null; error: DatabaseError | null; }> {
     const supabase = createClient();
 
     try {
@@ -194,11 +204,17 @@ export const taskClient = {
 
       return { data, error };
     } catch (error) {
-      return { data: null, error };
+      return {
+        data: null,
+        error: {
+          message: error instanceof Error ? error.message : 'An unexpected error occurred'
+
+        }
+      };
     }
   },
 
-  async deleteTask(taskId: string, permanent = false): Promise<{ error: any; }> {
+  async deleteTask(taskId: string, permanent = false): Promise<{ error: DatabaseError | null; }> {
     const supabase = createClient();
 
     try {
@@ -225,11 +241,11 @@ export const taskClient = {
         return { error };
       }
     } catch (error) {
-      return { error };
+      return { error: { message: error instanceof Error ? error.message : 'An unexpected error occurred' } };
     }
   },
 
-  async duplicateTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
+  async duplicateTask(taskId: string): Promise<{ data: TaskWithCategory | null; error: DatabaseError | null; }> {
     const supabase = createClient();
 
     try {
@@ -259,11 +275,11 @@ export const taskClient = {
 
       return await this.createTask(taskCopy);
     } catch (error) {
-      return { data: null, error };
+      return { data: null, error: { message: error instanceof Error ? error.message : 'An unexpected error occurred' } };
     }
   },
 
-  async toggleTaskCompletion(taskId: string): Promise<{ data: TaskWithCategory | null; error: any; }> {
+  async toggleTaskCompletion(taskId: string): Promise<{ data: TaskWithCategory | null; error: DatabaseError | null; }> {
     const supabase = createClient();
 
     try {
@@ -278,7 +294,7 @@ export const taskClient = {
         is_completed: !currentTask.is_completed,
       });
     } catch (error) {
-      return { data: null, error };
+      return { data: null, error: { message: error instanceof Error ? error.message : 'An unexpected error occurred' } };
     }
   },
 
