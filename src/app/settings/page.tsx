@@ -1,6 +1,5 @@
 "use client";
 
-
 import { UserProfileCard } from "@/components/profile/user-profile-card";
 import { UserProfileEditor } from "@/components/profile/user-profile-editor";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
+import { useNotifications } from "@/hooks/use-notifications";
+import { toast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { performanceMonitoring } from "@/lib/performance/bundle-optimization";
 import {
@@ -29,24 +30,52 @@ import {
   Upload,
   User,
 } from "lucide-react";
-import React, { useState } from "react";
-import { toast } from "sonner";
+import React, { useEffect, useState } from "react";
 
 import { EmailLogs } from "@/components/email/email-logs";
-import { EmailSettings } from "@/components/email/email-settings";
+import { EmailSettingsContainer } from "@/components/email/email-settings-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
-  const { profile } = useUserProfile();
+  const { user, signOut, resetPassword } = useAuth();
+  const { profile, updateProfile, loading: profileLoading, refetch } = useUserProfile();
+  const { preferences, updatePreferences } = useNotifications();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState(user?.email || "");
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Sync notification settings with profile data
   const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    taskReminders: true,
-    weeklyReports: false,
+    emailNotifications: profile?.email_notifications ?? true,
+    pushNotifications: preferences.browserNotifications,
+    taskReminders: profile?.task_reminders ?? true,
+    weeklyReports: profile?.daily_digest ?? false,
   });
+
+  // Update notification settings when profile or preferences change
+  useEffect(() => {
+    setNotificationSettings({
+      emailNotifications: profile?.email_notifications ?? true,
+      pushNotifications: preferences.browserNotifications,
+      taskReminders: profile?.task_reminders ?? true,
+      weeklyReports: profile?.daily_digest ?? false,
+    });
+  }, [profile, preferences]);
+
+  // Update reset email when user changes
+  useEffect(() => {
+    setResetEmail(user?.email || "");
+  }, [user?.email]);
+
+  // Force fetch profile when settings page loads and user is available
+  useEffect(() => {
+    if (user && !profile && !profileLoading) {
+      console.log("Settings page: Force fetching profile for user:", user.id);
+      refetch();
+    }
+  }, [user, profile, profileLoading, refetch]);
 
   // Track page performance
   React.useEffect(() => {
@@ -58,17 +87,34 @@ export default function SettingsPage() {
 
   const handlePasswordReset = async () => {
     if (!resetEmail) {
-      toast.error("Please enter your email address");
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+
+      });
       return;
     }
 
     setIsResettingPassword(true);
     try {
-      // This would typically call your auth service
-      // await resetPassword(resetEmail)
-      toast.success("Password reset email sent! Check your inbox.");
+      const result = await resetPassword(resetEmail);
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Password reset email sent! Check your inbox.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "Failed to send password reset email",
+
+        });
+      }
     } catch (error) {
-      toast.error("Failed to send password reset email");
+      toast({
+        title: "Error",
+        description: "Failed to send password reset email",
+      });
     } finally {
       setIsResettingPassword(false);
     }
@@ -81,20 +127,106 @@ export default function SettingsPage() {
     performanceMonitoring.trackInteraction("signout", "settings", endTime - startTime);
   };
 
-  const handleExportData = () => {
-    toast.success("Data export started. You'll receive an email when ready.");
+  const handleExportData = async () => {
+    if (isExporting) return;
+
+    setIsExporting(true);
+    try {
+      // TODO: Implement actual data export functionality
+      // This would typically generate a JSON/CSV file with user's tasks, categories, etc.
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      toast({
+        title: "Success",
+        description: "Data export started. You'll receive an email when ready.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to start data export",
+
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  const handleDeleteAccount = () => {
-    toast.error("Account deletion is not available in this demo");
+  const handleDeleteAccount = async () => {
+    if (isDeletingAccount) return;
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data."
+    );
+
+    if (!confirmed) return;
+
+    setIsDeletingAccount(true);
+    try {
+      // TODO: Implement actual account deletion
+      // This would typically delete user data and sign them out
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      toast({
+        title: "Error",
+        description: "Account deletion is not available in this demo",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete account",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
-  const updateNotificationSetting = (key: string, value: boolean) => {
+  const updateNotificationSetting = async (key: string, value: boolean) => {
+    // Optimistically update UI
     setNotificationSettings((prev) => ({
       ...prev,
       [key]: value,
     }));
-    toast.success("Notification settings updated");
+
+    try {
+      // Update different settings based on the key
+      switch (key) {
+        case "emailNotifications":
+          if (profile) {
+            await updateProfile({ email_notifications: value });
+          }
+          break;
+        case "taskReminders":
+          if (profile) {
+            await updateProfile({ task_reminders: value });
+          }
+          break;
+        case "weeklyReports":
+          if (profile) {
+            await updateProfile({ daily_digest: value });
+          }
+          break;
+        case "pushNotifications":
+          updatePreferences({ browserNotifications: value });
+          break;
+        default:
+          break;
+      }
+
+      toast({
+        title: "Success",
+        description: "Notification settings updated",
+      });
+    } catch (error) {
+      // Revert optimistic update on error
+      setNotificationSettings((prev) => ({
+        ...prev,
+        [key]: !value,
+      }));
+      toast({
+        title: "Error",
+        description: "Failed to update notification settings",
+
+      });
+    }
   };
 
   return (
@@ -147,14 +279,24 @@ export default function SettingsPage() {
                     {isEditingProfile ? "View Profile" : "Edit Profile"}
                   </Button>
 
-                  <Button onClick={handleExportData} className="w-full justify-start" variant="outline">
+                  <Button
+                    onClick={handleExportData}
+                    className="w-full justify-start"
+                    variant="outline"
+                    disabled={isExporting}
+                  >
                     <Download className="h-4 w-4 mr-2" />
-                    Export Data
+                    {isExporting ? "Exporting..." : "Export Data"}
                   </Button>
 
-                  <Button onClick={handleDeleteAccount} className="w-full justify-start" variant="destructive">
+                  <Button
+                    onClick={handleDeleteAccount}
+                    className="w-full justify-start"
+                    variant="destructive"
+                    disabled={isDeletingAccount}
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Account
+                    {isDeletingAccount ? "Deleting..." : "Delete Account"}
                   </Button>
                 </CardContent>
               </Card>
@@ -325,14 +467,7 @@ export default function SettingsPage() {
               </TabsList>
 
               <TabsContent value="settings">
-                <EmailSettings
-                  userId={user?.id || ""}
-                  initialPreferences={{
-                    email_notifications: notificationSettings.emailNotifications,
-                    daily_digest: notificationSettings.weeklyReports,
-                    reminder_hours: 24,
-                  }}
-                />
+                <EmailSettingsContainer userId={user?.id || ""} />
               </TabsContent>
 
               <TabsContent value="history">
@@ -356,12 +491,21 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  <Button variant="outline" className="justify-start">
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={handleExportData}
+                    disabled={isExporting}
+                  >
                     <Download className="h-4 w-4 mr-2" />
-                    Download My Data
+                    {isExporting ? "Exporting..." : "Download My Data"}
                   </Button>
 
-                  <Button variant="outline" className="justify-start">
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    disabled={true}
+                  >
                     <Upload className="h-4 w-4 mr-2" />
                     Import Data
                   </Button>
@@ -373,9 +517,14 @@ export default function SettingsPage() {
                     parties.
                   </p>
 
-                  <Button variant="destructive" className="justify-start">
+                  <Button
+                    variant="destructive"
+                    className="justify-start"
+                    onClick={handleDeleteAccount}
+                    disabled={isDeletingAccount}
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete All Data
+                    {isDeletingAccount ? "Deleting..." : "Delete All Data"}
                   </Button>
                 </div>
               </CardContent>
