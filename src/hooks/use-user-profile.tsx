@@ -34,8 +34,8 @@ class UserProfileManager {
     this.subscribers.forEach((callback) => callback());
   }
 
-  async initialize(userId: string) {
-    if (this.userId === userId && this.profile) return;
+  async initialize(userId: string, force = false) {
+    if (this.userId === userId && this.profile && !force) return;
 
     this.userId = userId;
     await this.fetchProfile();
@@ -97,7 +97,11 @@ class UserProfileManager {
       ...data,
       status: (data.status ?? "living") as UserStatus,
       social_links: data.social_links ?? {},
-    };
+      email_notifications: data.email_notifications ?? true,
+      daily_digest: data.daily_digest ?? false,
+      task_reminders: data.task_reminders ?? true,
+      reminder_hours: data.reminder_hours ?? 24,
+    } as UserProfile;
   }
 
   private setupRealtimeSubscription() {
@@ -329,7 +333,7 @@ export function useUserProfile() {
 
   const refetch = useCallback(async () => {
     if (user) {
-      await manager.initialize(user.id);
+      await manager.initialize(user.id, true); // Force refetch
     }
   }, [manager, user]);
 
