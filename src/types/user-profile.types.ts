@@ -31,6 +31,10 @@ export interface UserProfile {
   status: UserStatus;
   created_at: string;
   updated_at: string;
+  email_notifications: boolean;
+  daily_digest: boolean;
+  task_reminders: boolean;
+  reminder_hours: number;
 }
 
 export interface UserProfileInsert {
@@ -42,6 +46,10 @@ export interface UserProfileInsert {
   avatar_url?: string | null;
   social_links?: SocialLinks;
   status?: UserStatus;
+  email_notifications?: boolean;
+  daily_digest?: boolean;
+  task_reminders?: boolean;
+  reminder_hours?: number;
 }
 
 export interface UserProfileUpdate {
@@ -52,6 +60,10 @@ export interface UserProfileUpdate {
   avatar_url?: string | null;
   social_links?: SocialLinks;
   status?: UserStatus;
+  email_notifications?: boolean;
+  daily_digest?: boolean;
+  task_reminders?: boolean;
+  reminder_hours?: number;
 }
 
 export const STATUS_EMOJIS: Record<UserStatus, string> = {
