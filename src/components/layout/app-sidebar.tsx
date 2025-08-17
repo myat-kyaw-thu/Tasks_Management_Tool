@@ -24,9 +24,8 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
-import { useTasks } from "@/hooks/use-tasks";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { Archive, BarChart3, Calendar, CheckCircle, Clock, Home, LogOut, Settings, Star, Tag, User } from "lucide-react";
+import { BarChart3, CheckCircle, Home, LogOut, Settings, Tag, User } from "lucide-react";
 import React from "react";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -39,34 +38,7 @@ export const AppSidebar = React.memo(function AppSidebar({ activeView, onViewCha
   const { user, signOut } = useAuth();
   const { profile } = useUserProfile();
 
-  // ✅ FIXED: Single source of truth - only ONE useTasks hook
-  const { tasks: allTasks } = useTasks({
-    autoFetch: true,
-    enableRealtime: true,
-  });
-
-  // ✅ FIXED: Derive all counts from single source (memoized for performance)
-  const taskCounts = React.useMemo(() => {
-    if (!allTasks.length) {
-      return {
-        today: 0,
-        upcoming: 0,
-        important: 0,
-        completed: 0,
-      };
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-
-    return {
-      today: allTasks.filter((task) => task.due_date === today && !task.is_completed).length,
-      upcoming: allTasks.filter((task) => {
-        return task.due_date && task.due_date > today && !task.is_completed;
-      }).length,
-      important: allTasks.filter((task) => task.priority === "high" && !task.is_completed).length,
-      completed: allTasks.filter((task) => task.is_completed).length,
-    };
-  }, [allTasks]);
+  // No longer need task counts for filters - removed for simplicity
 
   // Memoize navigation items to prevent unnecessary re-renders
   const navigationItems = React.useMemo(
@@ -78,37 +50,13 @@ export const AppSidebar = React.memo(function AppSidebar({ activeView, onViewCha
         count: null,
       },
       {
-        id: "today",
-        title: "Today",
-        icon: Calendar,
-        count: taskCounts.today,
-      },
-      {
-        id: "upcoming",
-        title: "Upcoming",
-        icon: Clock,
-        count: taskCounts.upcoming,
-      },
-      {
-        id: "important",
-        title: "Important",
-        icon: Star,
-        count: taskCounts.important,
-      },
-      {
-        id: "completed",
-        title: "Completed",
-        icon: CheckCircle,
-        count: taskCounts.completed,
-      },
-      {
-        id: "archive",
-        title: "Archive",
-        icon: Archive,
+        id: "kanban",
+        title: "Kanban Board",
+        icon: BarChart3,
         count: null,
       },
     ],
-    [taskCounts.today, taskCounts.upcoming, taskCounts.important, taskCounts.completed],
+    [],
   );
 
   const managementItems = React.useMemo(
