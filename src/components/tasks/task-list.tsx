@@ -96,8 +96,8 @@ export function TaskList({
 
   if (loading) {
     return (
-      <div className={cn("space-y-3", className)}>
-        {Array.from({ length: 3 }).map((_, i) => (
+      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", className)}>
+        {Array.from({ length: 6 }).map((_, i) => (
           <Card
             key={i}
             className="border-0 bg-gradient-to-br from-muted/30 to-muted/10 backdrop-blur-sm animate-pulse"
@@ -143,7 +143,7 @@ export function TaskList({
 
   return (
     <>
-      <div className={cn("space-y-2", className)}>
+      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", className)}>
         {uniqueTasks.map(({ task, uniqueKey }, index) => (
           <TaskItem
             key={uniqueKey}
