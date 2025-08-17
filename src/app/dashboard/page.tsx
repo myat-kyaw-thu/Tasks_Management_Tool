@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 // Performance optimized imports
 import { createAsyncComponent } from "@/lib/performance/async-component-factory";
@@ -38,6 +38,7 @@ const LazyCategoryList = createAsyncComponent(() =>
 );
 
 // Hooks and types
+import { KanbanBoard } from '@/components/kanban';
 import type { TaskFilters } from "@/components/tasks/task-filters";
 import { useCategories } from "@/hooks/use-categories";
 import { useTasks } from "@/hooks/use-tasks";
@@ -420,6 +421,7 @@ export default function DashboardPage() {
   const viewMetadata = useMemo(() => {
     const metadata = {
       dashboard: { title: "Dashboard", description: "Welcome back! Here's your productivity overview." },
+      kanban: { title: "Kanban Board", description: "Drag and drop tasks to update their status" },
       today: { title: "Today's Tasks", description: "Focus on what's due today" },
       upcoming: { title: "Upcoming Tasks", description: "Plan ahead with future tasks" },
       important: { title: "Important Tasks", description: "High priority items that need attention" },
@@ -474,6 +476,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground">{viewMetadata.description}</p>
                 </div>
                 {(activeView === "dashboard" ||
+                  activeView === "kanban" ||
                   activeView === "today" ||
                   activeView === "upcoming" ||
                   activeView === "important") && (
@@ -571,6 +574,11 @@ export default function DashboardPage() {
                 </>
               )}
 
+              {/* Kanban View */}
+              {activeView === "kanban" && (
+                <KanbanBoard />
+              )}
+
               {/* Profile View */}
               {activeView === "profile" && (
                 <div className="max-w-2xl mx-auto overflow-hidden">
@@ -615,89 +623,33 @@ export default function DashboardPage() {
               )}
 
               {/* Other Views with Filters */}
-              {activeView !== "dashboard" && activeView !== "profile" && activeView !== "categories" && (
+              {activeView !== "dashboard" && activeView !== "kanban" && activeView !== "profile" && activeView !== "categories" && (
                 <div className="space-y-4">
-                  <Tabs defaultValue="list" className="w-full">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                      <TabsList className="grid w-full sm:w-auto grid-cols-2">
-                        <TabsTrigger value="list">List View</TabsTrigger>
-                        <TabsTrigger value="grid">Grid View</TabsTrigger>
-                      </TabsList>
-                      <LazyTaskFilters
-                        filters={taskFiltersState}
-                        categories={categories}
-                        onFiltersChange={setTaskFiltersState}
-                      />
-                    </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <LazyTaskFilters
+                      filters={taskFiltersState}
+                      categories={categories}
+                      onFiltersChange={setTaskFiltersState}
+                    />
+                  </div>
 
-                    <TabsContent value="list" className="space-y-3">
-                      <TaskList
-                        tasks={displayTasks}
-                        loading={allTasksLoading}
-                        onToggleComplete={handleToggleComplete}
-                        onEdit={handleEditTask}
-                        onDelete={handleDeleteTask}
-                        onDuplicate={handleDuplicateTask}
-                        onRetry={refetchTasks}
-                        emptyState={{
-                          title: `No ${activeView} tasks`,
-                          description: `You don't have any ${activeView} tasks yet.`,
-                          action:
-                            activeView !== "completed" && activeView !== "archive"
-                              ? { label: "Create Task", onClick: () => setShowTaskForm(true) }
-                              : undefined,
-                        }}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="grid" className="space-y-3">
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {displayTasks.map((task) => (
-                          <Card key={task.id} className="border-0 bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <CardHeader className="pb-2">
-                              <div className="flex items-start justify-between">
-                                <CardTitle className="text-sm line-clamp-2 break-words">{task.title}</CardTitle>
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs px-1.5 py-0.5 h-5 ${task.priority === "high"
-                                    ? "border-rose-200 text-rose-700"
-                                    : task.priority === "medium"
-                                      ? "border-amber-200 text-amber-700"
-                                      : "border-slate-200 text-slate-700"
-                                    }`}
-                                >
-                                  {task.priority}
-                                </Badge>
-                              </div>
-                              {task.description && (
-                                <CardDescription className="line-clamp-2 text-xs break-words">
-                                  {task.description}
-                                </CardDescription>
-                              )}
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <div className="flex items-center justify-between">
-                                {task.due_date && (
-                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Calendar className="h-3 w-3" />
-                                    {task.due_date}
-                                  </div>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant={task.is_completed ? "default" : "outline"}
-                                  onClick={() => handleToggleComplete(task.id)}
-                                  className="h-7 text-xs"
-                                >
-                                  {task.is_completed ? "Completed" : "Mark Done"}
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                  <TaskList
+                    tasks={displayTasks}
+                    loading={allTasksLoading}
+                    onToggleComplete={handleToggleComplete}
+                    onEdit={handleEditTask}
+                    onDelete={handleDeleteTask}
+                    onDuplicate={handleDuplicateTask}
+                    onRetry={refetchTasks}
+                    emptyState={{
+                      title: `No ${activeView} tasks`,
+                      description: `You don't have any ${activeView} tasks yet.`,
+                      action:
+                        activeView !== "completed" && activeView !== "archive"
+                          ? { label: "Create Task", onClick: () => setShowTaskForm(true) }
+                          : undefined,
+                    }}
+                  />
                 </div>
               )}
             </div>
