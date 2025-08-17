@@ -10,7 +10,7 @@ import type { Category } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar, Filter, Flag, Search, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface TaskFilters {
   search?: string;
@@ -31,6 +31,25 @@ interface TaskFiltersProps {
 export function TaskFiltersComponent({ filters, categories, onFiltersChange, className }: TaskFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(filters.search || "");
+
+  // Debounced search with 500ms delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        onFiltersChange({ ...filters, search: searchInput || undefined });
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput, filters, onFiltersChange]);
+
+  // Update local search input when filters change externally
+  useEffect(() => {
+    if (filters.search !== searchInput) {
+      setSearchInput(filters.search || "");
+    }
+  }, [filters.search]);
 
   const updateFilter = (key: keyof TaskFilters, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -60,8 +79,8 @@ export function TaskFiltersComponent({ filters, categories, onFiltersChange, cla
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
-            value={filters.search || ""}
-            onChange={(e) => updateFilter("search", e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10"
           />
         </div>
